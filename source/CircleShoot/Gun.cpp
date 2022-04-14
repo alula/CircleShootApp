@@ -400,10 +400,17 @@ void Gun::DrawCachedGunImage(Graphics *g, float theZoom)
         aTrans.Translate(-aCenterX, -aCenterY);
         aTrans.Scale(theZoom, theZoom);
         aTrans.RotateRad(-mAngle);
-        aTrans.Translate(mCenterX + ((theZoom - 1.0) * -50.0),
-                         mCenterY + ((theZoom - 1.0) * 100.0));
+        aTrans.Translate(mCenterX + ((theZoom - 1.0f) * -50.0f),
+                         mCenterY + ((theZoom - 1.0f) * 100.0f));
 
         D3DInterface *aD3D = gSexyAppBase->mDDInterface->mD3DInterface;
+        aD3D->BltTransformed(mCachedGunImage, &g->mClipRect, Color(0, 0, 0, 96), Graphics::DRAWMODE_NORMAL, a4, aTrans, true);
+
+        aTrans.LoadIdentity();
+        aTrans.Translate(-aCenterX, -aCenterY);
+        aTrans.Scale(theZoom, theZoom);
+        aTrans.RotateRad(-mAngle);
+        aTrans.Translate(mCenterX, mCenterY);
         aD3D->BltTransformed(mCachedGunImage, &g->mClipRect, Color::White, Graphics::DRAWMODE_NORMAL, a4, aTrans, true);
     }
     else
@@ -438,6 +445,15 @@ void Gun::DoBlink(bool wink)
     mBlinkCount = 25;
 }
 
+static void RotateXY(float &x, float &y, float cx, float cy, float rad)
+{
+    float ox = x - cx;
+    float oy = y - cy;
+
+    x = cx + ox * cosf(rad) + oy * sinf(rad);
+    y = cy + oy * cosf(rad) - ox * sinf(rad);
+}
+
 void Gun::CalcAngle()
 {
     if (!mBullet)
@@ -465,13 +481,7 @@ void Gun::CalcAngle()
         return;
     }
 
-    aPointX = aPointX - mCenterX;
-    aPointY = aPointY - mCenterY;
-
-    float vx = cosf(mAngle);
-    float vy = sinf(mAngle);
-
-    mBullet->SetPos((mCenterX + (vx * aPointX)) + (vy * aPointY),
-                    (mCenterY + (vx * aPointY)) + (vy * aPointX));
+    RotateXY(aPointX, aPointY, mCenterX, mCenterY, mAngle);
+    mBullet->SetPos(aPointX, aPointY);
     mBullet->SetRotation(mAngle);
 }

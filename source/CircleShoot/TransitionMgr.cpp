@@ -46,6 +46,19 @@ void FrogScale::SyncState(DataSync &theSync)
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+void TextBlurb::SyncState(DataSync &theSync)
+{
+    theSync.SyncSShort(mCharNum);
+    theSync.SyncShort(mDelayCnt);
+    theSync.SyncSShort(mPos.mX);
+    theSync.SyncSShort(mPos.mY);
+    theSync.SyncString(mText);
+    theSync.SyncLong(mColor);
+    theSync.SyncLong(mFont);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 LetterStamp::LetterStamp()
 {
     mPos.mX = 0;
@@ -400,7 +413,36 @@ void TransitionMgr::Clear()
     mState = TransitionState_None;
 }
 
-void TransitionMgr::SyncState(DataSync &theSync) {}
+void TransitionMgr::SyncState(DataSync &theSync)
+{
+    theSync.SyncLong(mStateCount);
+    theSync.SyncLong(mQuakeFrame);
+    theSync.SyncFloat(mCurFrogScale);
+    theSync.SyncFloat(mCurFrogAngle);
+    theSync.SyncLong(mStageCompleteFrame);
+    theSync.SyncBool(mDoStageUp);
+    theSync.SyncBool(mDoTempleUp);
+    theSync.SyncByte(mTargetLevelFade);
+    theSync.SyncByte(mLevelFade);
+    theSync.SyncByte(mLevelFadeInc);
+    theSync.SyncLong(mResetFrame);
+
+    if (theSync.mReader)
+    {
+        theSync.SyncBytes(&mState, 4);
+        mState = (TransitionState)ByteSwap(mState);
+    }
+    else
+    {
+        mState = (TransitionState)ByteSwap(mState);
+        theSync.SyncBytes(&mState, 4);
+    }
+
+    DataSync_SyncSTLContainer(theSync, mFrogScaleList);
+    DataSync_SyncSTLContainer(theSync, mFrogMoveList);
+    DataSync_SyncSTLContainer(theSync, mLetterStampList);
+    DataSync_SyncSTLContainer(theSync, mTextBlurbList);
+}
 
 void TransitionMgr::AddFrogMove(const IntPoint &theStartPos, const IntPoint &theEndPos, int theDuration, int theStagger)
 {
@@ -505,11 +547,14 @@ void TransitionMgr::DoQuake()
     IntPoint m3(mBoard->mNextLevelDesc->mGunX, mBoard->mNextLevelDesc->mGunY);
     if (mDoTempleUp)
     {
-        m3.mY = 200;
-        m3.mX = 320;
+        m3 = IntPoint(320, 200);
     }
 
     IntPoint m2((7 * m1.mX + 3 * m3.mX) / 10, (7 * m1.mY + 3 * m3.mY) / 10);
+
+    printf("m1: %d %d\n", m1.mX, m1.mY);
+    printf("m2: %d %d\n", m2.mX, m2.mY);
+    printf("m3: %d %d\n", m3.mX, m3.mY);
 
     AddFrogMove(m1, m2, 70, 80);
     AddFrogMove(m2, m3, 40, 0);
@@ -579,7 +624,13 @@ void TransitionMgr::DoStageComplete()
             AddFrogMove(m2, m3, 15, 0);
             AddFrogScale(2.0f, 1.0f, 15, 0);
 
-            // todo
+            int v11 = v35 + a5;
+            v35 += a5 + 35;
+            int v30 = v10;
+
+            AddLetterStamp(v10, m3.mX, m3.mY - 100, 0xffff00, v35);
+
+            int v36 = v11 + 43;
         }
     }
 }

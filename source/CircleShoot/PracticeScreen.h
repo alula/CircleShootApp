@@ -9,13 +9,15 @@
 namespace Sexy
 {
     class CircleButton;
-    class DDImage;
+    class Image;
     class Graphics;
     class MemoryImage;
     class HyperlinkWidget;
     class HighScore;
     class WidgetManager;
 
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
     class PracticeScreen : public Widget, public ButtonListener
     {
     private:
@@ -69,7 +71,7 @@ namespace Sexy
         void SyncModeButtons();
         MemoryImage *CreateGradientImage(std::string const &theName, int theAlpha);
         int GetDoorAt(int theX, int theY);
-        DDImage *GetThumbnail(std::string const &theName);
+        MemoryImage *GetThumbnail(std::string const &theName);
         void GetHighscores();
         void LoadBoard();
     };

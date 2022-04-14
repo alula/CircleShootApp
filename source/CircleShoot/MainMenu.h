@@ -12,6 +12,8 @@ namespace Sexy
     class SoundInstance;
     class WidgetManager;
 
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
     class MainMenu : public Widget, public ButtonListener
     {
     private:
@@ -43,16 +45,25 @@ namespace Sexy
         CircleButton *mQuitButton;
         HyperlinkWidget *mNotYouLink;
         MainMenuOverlay *mMainMenuOverlay;
-        Image *mEyesImage;
+        MemoryImage *mEyesImage;
         Image *unk78;
         SoundInstance *mUfoSound;
-        double mEyeLeftX;
-        double mEyeLeftY;
-        double mEyeRightX;
-        double mEyeRightY;
-        int unkA0;
-        int unkA4;
+        FPoint mEyeLeft;
+        FPoint mEyeRight;
+        Point mEyeCutoutPos;
         bool mShowHat;
+        Point unkAC;
+        void *unkB4;
+        void *unkB8;
+        void *unkBC;
+        void *unkC0;
+        int mFlash;
+        float unkC8;
+        bool unkCC;
+        void *mUFOMoveList;
+        void *unkD4;
+        void *mUFOScaleList;
+        void *unkDC;
 
         static bool mMoveEyes;
     };

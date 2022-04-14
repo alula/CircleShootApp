@@ -93,7 +93,7 @@ void UserProfile::LoadDetails()
     Buffer aBuf;
 
     // yes, windows version used forward slashes
-    std::string aFileName = Sexy::StrFormat(_S("userdata/user%d.dat"), mId);
+    std::string aFileName = Sexy::StrFormat("userdata/user%d.dat", mId);
     if (gSexyAppBase->ReadBufferFromFile(aFileName, &aBuf))
     {
         DataReader aReader;
@@ -109,7 +109,7 @@ void UserProfile::SaveDetails()
     // TODO: Mac version uses Application Support folder
     Sexy::MkDir("userdata");
 
-    std::string aFileName = Sexy::StrFormat(_S("userdata/user%d.dat"), mId);
+    std::string aFileName = Sexy::StrFormat("userdata/user%d.dat", mId);
 }
 
 bool UserProfile::UpdateMaxLevel(const std::string &theBoard, int theLevel)

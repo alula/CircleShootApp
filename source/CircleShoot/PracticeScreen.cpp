@@ -2,8 +2,8 @@
 
 #include <SexyAppFramework/ButtonListener.h>
 #include <SexyAppFramework/SexyAppBase.h>
-#include <SexyAppFramework/DDImage.h>
 #include <SexyAppFramework/Font.h>
+#include <SexyAppFramework/DDImage.h>
 #include <SexyAppFramework/Image.h>
 #include <SexyAppFramework/MemoryImage.h>
 #include <SexyAppFramework/Widget.h>
@@ -454,7 +454,7 @@ int PracticeScreen::GetDoorAt(int theX, int theY)
 			int aPosX = theX - aDoor.mRect.mX;
 			int aPosY = theY - aDoor.mRect.mY;
 
-			ulong *aBits = aDoor.mImage->GetBits();
+			uint *aBits = (uint*)aDoor.mImage->GetBits();
 			if ((aBits[aPosX + aPosY * aDoor.mImage->GetWidth()] & 0xff000000) != 0)
 				break;
 		}
@@ -466,12 +466,12 @@ int PracticeScreen::GetDoorAt(int theX, int theY)
 	return i;
 }
 
-DDImage *PracticeScreen::GetThumbnail(std::string const &theName)
+MemoryImage *PracticeScreen::GetThumbnail(std::string const &theName)
 {
 	// TODO:
 	// there's also a base folder argument passed into arg 2 of GetImage in some versions
 	// the SexyApp version we're using doesn't support that and we don't support custom save folders yet.
-	DDImage *anImage = gSexyAppBase->GetImage("levels/cached_thumbnails/" + theName);
+	MemoryImage *anImage = gSexyAppBase->GetImage("levels/cached_thumbnails/" + theName);
 	if (anImage != NULL)
 	{
 		return anImage;

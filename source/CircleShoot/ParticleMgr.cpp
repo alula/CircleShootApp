@@ -4,6 +4,7 @@
 #include <SexyAppFramework/Graphics.h>
 #include <SexyAppFramework/Image.h>
 
+#include "Board.h"
 #include "DataSync.h"
 #include "ParticleMgr.h"
 #include "Res.h"
@@ -234,6 +235,12 @@ void ParticleMgr::UpdateFloatingText()
 
         if (aIter->mUpdateCnt < 0)
             continue;
+
+        if (aIter->mUpdateCnt == 1)
+        {
+            if (aIter->mScoreInc > 0)
+                mBoard->IncScore(aIter->mScoreInc);
+        }
 
         if (aIter->mUpdateCnt > aIter->mDuration)
         {

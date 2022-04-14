@@ -1,5 +1,7 @@
 #include "Zuma_Prefix.pch"
 
+#include <cstddef>
+
 #include <SexyAppFramework/XMLParser.h>
 
 #include "Board.h"
@@ -760,7 +762,7 @@ bool LevelParser::DoParseLevel(XMLElement &theElem, bool isLevel)
 
     if (aDesc.mParTime == 0)
     {
-        aDesc.mParTime = aDesc.mCurveDesc->mScoreTarget / 1000;
+        aDesc.mParTime = 35 * aDesc.mCurveDesc->mScoreTarget / 1000;
         int aTimeOffset = 0;
 
         for (int i = 0; i < 3; i++)
@@ -776,7 +778,7 @@ bool LevelParser::DoParseLevel(XMLElement &theElem, bool isLevel)
                 aTimeOffset -= (int)aDesc.mCurveDesc[i].mPath.empty() - 1;
             }
 
-            aDesc.mParTime = (int)((float)(35 * aDesc.mCurveDesc[0].mScoreTarget / 1000) * (aTimeOffset * 0.95f));
+            aDesc.mParTime = (int)((float)(aDesc.mParTime) * (aTimeOffset * 0.95f));
         }
 
         aDesc.mParTime = 5 * ((aDesc.mParTime + 4) / 5);

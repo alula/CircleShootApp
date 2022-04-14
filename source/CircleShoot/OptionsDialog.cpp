@@ -13,11 +13,11 @@ using namespace Sexy;
 ///////////////////////////////////////////////////////////////////////////////
 
 OptionsDialog::OptionsDialog(bool inMainMenu) : CircleDialog(Sexy::IMAGE_DIALOG_BACK, Sexy::IMAGE_DIALOG_BUTTON, 0, true,
-                                                             inMainMenu ? _S("MENU") : _S("OPTIONS"), _S(""),
-                                                             inMainMenu ? _S("Back To Game") : _S("Done"),
+                                                             inMainMenu ? "MENU" : "OPTIONS", "",
+                                                             inMainMenu ? "Back To Game" : "Done",
                                                              3, false)
 {
-    button = MakeButton(1, this, _S("This is pretty fun"), 1, 0, 3);
+    button = MakeButton(1, this, "This is pretty fun", 1, 0, 3);
     mExtraHeight = 200;
 }
 

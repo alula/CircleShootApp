@@ -14,6 +14,7 @@
 #include "CircleButton.h"
 #include "CircleCommon.h"
 #include "CurveMgr.h"
+#include "DataSync.h"
 #include "LevelParser.h"
 #include "Gun.h"
 #include "HighScoreMgr.h"
@@ -65,6 +66,15 @@ GameStats::GameStats()
 
 void GameStats::SyncState(DataSync &theSync)
 {
+    theSync.SyncLong(mTimePlayed);
+    theSync.SyncLong(mNumBallsCleared);
+    theSync.SyncLong(mNumGemsCleared);
+    theSync.SyncLong(mNumGaps);
+    theSync.SyncLong(mNumCombos);
+    theSync.SyncLong(mMaxCombo);
+    theSync.SyncLong(mMaxComboScore);
+    theSync.SyncLong(mMaxInARow);
+    theSync.SyncLong(mMaxInARowScore);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -317,8 +327,8 @@ void Board::DoLevelUp(bool playSounds, bool isCheat)
             mCurTreasure = &*anItr;
         }
 
-        mLevelString = Sexy::StrFormat(_S("%s %d"), gSmallGauntletStages[mLevelDesc->mStage], mLevel + 1);
-        mVerboseLevelString = Sexy::StrFormat(_S("%s %d"), gGauntletStages[mLevelDesc->mStage], mLevel + 1);
+        mLevelString = Sexy::StrFormat("%s %d", gSmallGauntletStages[mLevelDesc->mStage], mLevel + 1);
+        mVerboseLevelString = Sexy::StrFormat("%s %d", gGauntletStages[mLevelDesc->mStage], mLevel + 1);
 
         int aTextWidth = Sexy::FONT_HUGE->StringWidth(mVerboseLevelString);
 
@@ -500,7 +510,7 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
                 }
             }
 
-            aFloat.AddText(StrFormat(_S("BONUS +%d"), bonus), Sexy::FONT_FLOAT_ID, 0xFFFF00);
+            aFloat.AddText(StrFormat("BONUS +%d", bonus), Sexy::FONT_FLOAT_ID, 0xFFFF00);
             aFloat.AddToMgr(mParticleMgr, mCurTreasure->x, mCurTreasure->y);
             IncScore(bonus);
 
@@ -1315,11 +1325,13 @@ void Board::KeyChar(char theChar)
     else if (c == 'S')
     {
         mSpriteMgr->ToggleSpaceScroll();
-    } 
-    else if (c == 'P') {
+    }
+    else if (c == 'P')
+    {
         mScore = mScoreTarget;
 
-        for (int i = 0; i < mNumCurves; i++) {
+        for (int i = 0; i < mNumCurves; i++)
+        {
             mCurveMgr[i]->DetonateBalls();
         }
     }
@@ -1622,6 +1634,147 @@ void Board::Pause(bool pause, bool becauseOfDialog)
 
 void Board::SyncState(DataSync &theSync)
 {
+    DataReader *aReader = theSync.mReader;
+    DataWriter *aWriter = theSync.mWriter;
+
+    mGun->SyncState(theSync);
+    mParticleMgr->SyncState(theSync);
+    mTransitionMgr->SyncState(theSync);
+    mSpriteMgr->SyncState(theSync);
+
+    for (int i = 0; i < mNumCurves; i++)
+    {
+        mCurveMgr[i]->SyncState(theSync);
+    }
+
+    theSync.SyncLong(mScore);
+    theSync.SyncLong(mScoreDisplay);
+    theSync.SyncShort(mLives);
+    theSync.SyncLong(mCurBarSize);
+    theSync.SyncLong(mTargetBarSize);
+    theSync.SyncLong(mBarBlinkCount);
+    theSync.SyncLong(mFlashCount);
+    theSync.SyncLong(mLivesBlinkCount);
+    theSync.SyncLong(mAccuracyCount);
+    theSync.SyncLong(mDifficultyDiff);
+
+    if (theSync.mReader)
+    {
+        theSync.SyncBytes(&mGameState, 4);
+        mGameState = (GameState)ByteSwap(mGameState);
+    }
+    else
+    {
+        mGameState = (GameState)ByteSwap(mGameState);
+        theSync.SyncBytes(&mGameState, 4);
+    }
+
+    theSync.SyncLong(mLastBallClickTick);
+    theSync.SyncLong(mLastExplosionTick);
+    theSync.SyncBool(mDoGuide);
+    theSync.SyncBool(mIsWinning);
+    theSync.SyncLong(mTreasureEndFrame);
+    theSync.SyncLong(mTreasureZoomX);
+    theSync.SyncLong(mTreasureZoomY);
+    theSync.SyncLong(mTreasureZoomFrame);
+    theSync.SyncLong(mLevelEndFrame);
+    theSync.SyncLong(mLevelBeginScore);
+    theSync.SyncLong(mScoreTarget);
+    theSync.SyncBool(mDestroyAll);
+    theSync.SyncLong(mPauseFade);
+    theSync.SyncShort(mNumClearsInARow);
+    theSync.SyncLong(mCurInARowBonus);
+    theSync.SyncBool(mHaveReachedTarget);
+    theSync.SyncBool(mLevelBeginning);
+    mLevelStats.SyncState(theSync);
+    mGameStats.SyncState(theSync);
+    theSync.SyncString(mLevelString);
+    theSync.SyncString(mVerboseLevelString);
+    theSync.SyncLong(mNextDifficultyIncFrame);
+    theSync.SyncShort(mMaxStage);
+    theSync.SyncBool(mIsEndless);
+    theSync.SyncString(mOriginalPracticeBoard);
+
+    if (aReader)
+    {
+        mGuideBall = NULL;
+        mShowGuide = false;
+        mRecalcGuide = true;
+
+        DeleteBullets();
+        mBallColorMap.clear();
+
+        int aColorMapCount = aReader->ReadShort();
+        for (int i = 0; i < aColorMapCount; i++)
+        {
+            int aColor = aReader->ReadByte();
+            int aCount = aReader->ReadShort();
+            mBallColorMap[aColor] = aCount;
+        }
+
+        int aBulletCount = aReader->ReadShort();
+        for (int i = 0; i < aBulletCount; i++)
+        {
+            Bullet *aBullet = new Bullet();
+            aBullet->SyncState(theSync);
+            mBulletList.push_back(aBullet);
+        }
+
+        mCurTreasureNum = (signed char)aReader->ReadByte();
+        if (mCurTreasureNum < 0)
+        {
+            mCurTreasure = 0;
+        }
+        else
+        {
+            TreasurePointList::iterator anItr = mLevelDesc->mTreasurePoints.begin();
+            for (int i = 0; i < mCurTreasureNum; i++)
+            {
+                anItr++;
+            }
+
+            mCurTreasure = &*anItr;
+        }
+
+        mOldCurveList.clear();
+        int aOldCurveCount = aReader->ReadShort();
+        for (int i = 0; i < aOldCurveCount; i++)
+        {
+            std::string aCurveName;
+            aReader->ReadString(aCurveName);
+            mOldCurveList.push_back(aCurveName);
+        }
+    }
+    else
+    {
+        aWriter->WriteShort(mBallColorMap.size());
+        for (ColorMap::iterator anItr = mBallColorMap.begin();
+             anItr != mBallColorMap.end();
+             anItr++)
+        {
+            aWriter->WriteByte(anItr->first);
+            aWriter->WriteShort(anItr->second);
+        }
+
+        aWriter->WriteShort(mBulletList.size());
+        for (BulletList::iterator anItr = mBulletList.begin();
+             anItr != mBulletList.end();
+             anItr++)
+        {
+            (*anItr)->SyncState(theSync);
+        }
+
+        signed char aCurTreasureNum = mCurTreasure != NULL ? mCurTreasureNum : -1;
+        aWriter->WriteByte((uchar)aCurTreasureNum);
+
+        aWriter->WriteShort(mOldCurveList.size());
+        for (LevelParser::StringList::iterator anItr = mOldCurveList.begin();
+             anItr != mOldCurveList.end();
+             anItr++)
+        {
+            aWriter->WriteString(*anItr);
+        }
+    }
 }
 
 void Board::SaveGame(const std::string &theFilePath) {}
@@ -1687,7 +1840,7 @@ int Board::GetParBonus(int theLevelTime, int theParTime)
         return 0;
     }
 
-    return 100 * (int)(1.0f - ((float)theLevelTime / (float)theParTime));
+    return 100 * (((1.0f - ((float)theLevelTime / theParTime)) * 25000.0f) / 100) + 100;
 }
 
 void Board::ResetInARowBonus()
@@ -1738,7 +1891,10 @@ void Board::DoGenerateBackgroundTransitions()
 void Board::SetLevelToNextLevel()
 {
     WaitForLoadingThread();
+
+    LevelDesc *anOldLevelDesc = mLevelDesc;
     mLevelDesc = mNextLevelDesc;
+    mNextLevelDesc = anOldLevelDesc;
 
     for (int i = 0; i < 3; i++)
     {
@@ -1780,7 +1936,7 @@ void Board::GetLevel(int theLevel, LevelDesc *theLevelDesc, const char *theLevel
             printf("Level name: %s\n", theLevelName);
             *theLevelDesc = mApp->mLevelParser->GetLevelByName(theLevelName, aDifficulty);
         }
-        
+
         if (mPracticeMode == PracticeMode_Single)
         {
             *theLevelDesc = mApp->mLevelParser->GetLevelByName(mPracticeBoard, aDifficulty);

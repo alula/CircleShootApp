@@ -9,6 +9,7 @@
 
 #include "CircleShootApp.h"
 #include "CurveMgr.h"
+#include "DataSync.h"
 #include "SpriteMgr.h"
 #include "LevelParser.h"
 #include "Ball.h"
@@ -636,12 +637,12 @@ void SpriteMgr::UpdateBackgroundTransition(int theStep)
             anItr->y += Sexy::AppRand() % 3 - 1;
         }
 
-        if (x <= 0 && anItr->x >= 0 || x + anItr->mImage->mWidth >= 630 || anItr->x + anItr->mImage->mWidth < 640)
+        if (x <= 0 && anItr->x >= 0 || (x + anItr->mImage->mWidth >= 630 && anItr->x + anItr->mImage->mWidth < 640))
         {
             anItr->x = x;
         }
 
-        if (y <= 0 && anItr->y >= 0 || y + anItr->mImage->mHeight >= 470 || anItr->y + anItr->mImage->mHeight < 480)
+        if (y <= 0 && anItr->y >= 0 || (y + anItr->mImage->mHeight >= 470 && anItr->y + anItr->mImage->mHeight < 480))
         {
             anItr->y = y;
         }
@@ -719,10 +720,43 @@ void SpriteMgr::DrawHoleForCurve(Graphics *g, int theCurveNum)
     DrawHole(g, theCurveNum);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-SpriteImage::~SpriteImage() {}
+void SpriteMgr::SyncState(DataSync &theSync)
+{
+    DataReader *aReader = theSync.mReader;
+    DataWriter *aWriter = theSync.mWriter;
+
+    if (aWriter)
+    {
+        aWriter->WriteByte(mHoleFlashList.size());
+        for (HoleFlashList::iterator anItr = mHoleFlashList.begin();
+             anItr != mHoleFlashList.end();
+             anItr++)
+        {
+            aWriter->WriteByte(anItr->mUpdateCount);
+            aWriter->WriteByte(anItr->mCurveNum);
+        }
+    } else {
+        mHoleFlashList.clear();
+
+        int aFlashCount = aReader->ReadByte();
+        for (int i = 0; i < aFlashCount; i++)
+        {
+            mHoleFlashList.push_back(HoleFlash());
+            HoleFlash& aFlash = mHoleFlashList.back();
+            aFlash.mUpdateCount = aReader->ReadByte();
+            aFlash.mCurveNum = aReader->ReadByte();
+        }
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-SpriteMgr::HoleInfo::~HoleInfo() {}
+SpriteImage::~SpriteImage() {
+    delete mImage;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+SpriteMgr::HoleInfo::~HoleInfo() {
+    delete mImage;
+}

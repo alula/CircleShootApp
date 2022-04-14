@@ -189,9 +189,9 @@ bool Ball::CollidesWithPhysically(Ball *theBall, int thePad)
 {
     float dx = theBall->GetX() - this->GetX();
     float dy = theBall->GetY() - this->GetY();
-    float r = (float)theBall->GetRadius() + (float)(thePad * 2) + (float)this->GetRadius();
+    float r = (float)theBall->GetRadius() + thePad;
 
-    return dx * dx + dy * dy < r * r;
+    return dx * dx + dy * dy < r * (r * 4.0f);
 }
 
 bool Ball::CollidesWith(Ball *theBall, int thePad)

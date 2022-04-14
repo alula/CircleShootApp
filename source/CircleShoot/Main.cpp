@@ -2,16 +2,15 @@
 
 #include "CircleShootApp.h"
 
-#ifdef _WIN32
-//int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
-int main() {
+// #ifdef _WIN32
+#if 0
+int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 #else
 int main() {
 #endif
     Sexy::CircleShootApp app;
 
     app.Init();
-    app.Set3DAcclerated(false);
     app.Start();
     app.Shutdown();
     

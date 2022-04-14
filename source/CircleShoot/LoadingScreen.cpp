@@ -24,7 +24,7 @@ LoadingScreen::LoadingScreen()
     unk8 = false;
 
     mClickToPlayLink = new HyperlinkWidget(0, this);
-    mClickToPlayLink->mLabel = _S("Click Here To Play!");
+    mClickToPlayLink->mLabel = "Click Here To Play!";
     mClickToPlayLink->SetFont(Sexy::FONT_FLOAT);
     mClickToPlayLink->mColor = Color(0xffec91);
     mClickToPlayLink->mOverColor = Color(0xffffff);
@@ -32,7 +32,7 @@ LoadingScreen::LoadingScreen()
     mClickToPlayLink->SetVisible(false);
 
     mRegisterLink = new HyperlinkWidget(1, this);
-    mRegisterLink->mLabel = _S("Click Here To Register!");
+    mRegisterLink->mLabel = "Click Here To Register!";
     mRegisterLink->SetFont(Sexy::FONT_FLOAT);
     mRegisterLink->mColor = Color(0xffec91);
     mRegisterLink->mOverColor = Color(0xffffff);

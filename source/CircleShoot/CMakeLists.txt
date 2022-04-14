@@ -33,7 +33,7 @@ add_executable(Zuma #WIN32
 )
 
 target_include_directories(Zuma PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../
+    ${SEXYAPP_INCLUDE_DIRS}
 )
 
 if(MSYS OR MINGW)

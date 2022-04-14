@@ -11,6 +11,8 @@ ENDIF()
 
 FIND_PACKAGE(DirectX REQUIRED)
 
+set(SEXYAPP_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/source)
+
 add_subdirectory(source/ImageLib)
 add_subdirectory(source/PakLib)
 add_subdirectory(source/SexyAppFramework)

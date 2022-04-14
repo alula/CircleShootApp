@@ -10,6 +10,7 @@
 #include "CircleShootApp.h"
 #include "CircleCommon.h"
 #include "CurveData.h"
+#include "DataSync.h"
 #include "LevelParser.h"
 #include "WayPoint.h"
 #include "ParticleMgr.h"
@@ -709,7 +710,7 @@ void CurveMgr::SetStopAddingBalls(bool stop)
     {
         for (BallList::iterator aBallItr = mPendingBalls.begin();
              aBallItr != mPendingBalls.end();
-             ++aBallItr)
+             aBallItr++)
             delete *aBallItr;
 
         mPendingBalls.clear();
@@ -816,7 +817,7 @@ int CurveMgr::DrawEndLevelBonus(int theStagger)
         }
 
         aFloat.Clear();
-        aFloat.AddText(Sexy::StrFormat(_S("+%d"), 100), Sexy::FONT_FLOAT_ID, 0xFFFF00);
+        aFloat.AddText(Sexy::StrFormat("+%d", 100), Sexy::FONT_FLOAT_ID, 0xFFFF00);
         aFloat.AddToMgr(mBoard->mParticleMgr, aExplodeX, aExplodeY, aStagger + 10, 100);
 
         aPoint += 60;
@@ -851,7 +852,83 @@ void CurveMgr::AddPowerUp(PowerType thePower)
         b->SetPowerType(thePower);
 }
 
-void CurveMgr::SyncState(DataSync &theSync) {}
+void CurveMgr::SyncState(DataSync &theSync)
+{
+    DataReader *aReader = theSync.mReader;
+    DataWriter *aWriter = theSync.mWriter;
+
+    if (aReader)
+    {
+        DeleteBalls();
+
+        int aBulCount = aReader->ReadShort();
+        for (int i = 0; i < aBulCount; i++)
+        {
+            Bullet *aBullet = new Bullet();
+            aBullet->SyncState(theSync);
+            mBulletList.push_back(aBullet);
+        }
+
+        int aPendingBallCount = aReader->ReadShort();
+        for (int i = 0; i < aPendingBallCount; i++)
+        {
+            Ball *aBall = new Ball();
+            aBall->SyncState(theSync);
+            mPendingBalls.push_back(aBall);
+        }
+
+        int aBallCount = aReader->ReadShort();
+        for (int i = 0; i < aBallCount; i++)
+        {
+            Ball *aBall = new Ball();
+            aBall->SyncState(theSync);
+            mBallList.push_back(aBall);
+        }
+    }
+    else
+    {
+        aWriter->WriteShort((short)mBulletList.size());
+        for (BulletList::iterator aBulletItr = mBulletList.begin(); aBulletItr != mBulletList.end(); aBulletItr++)
+        {
+            Bullet *aBullet = *aBulletItr;
+            aBullet->SyncState(theSync);
+        }
+
+        aWriter->WriteShort((short)mPendingBalls.size());
+        for (BallList::iterator aBallItr = mPendingBalls.begin(); aBallItr != mPendingBalls.end(); aBallItr++)
+        {
+            Ball *aBall = *aBallItr;
+            aBall->SyncState(theSync);
+        }
+
+        aWriter->WriteShort((short)mBallList.size());
+        for (BallList::iterator aBallItr = mBallList.begin(); aBallItr != mBallList.end(); aBallItr++)
+        {
+            Ball *aBall = *aBallItr;
+            aBall->SyncState(theSync);
+        }
+    }
+
+    for (int i = 0; i < (int)PowerType_Max; i++)
+    {
+        theSync.SyncLong(mLastPowerUpFrame[i]);
+    }
+
+    theSync.SyncLong(mStopTime);
+    theSync.SyncLong(mSlowCount);
+    theSync.SyncLong(mBackwardCount);
+    theSync.SyncLong(mTotalBalls);
+    theSync.SyncFloat(mAdvanceSpeed);
+    theSync.SyncShort(mFirstChainEnd);
+    theSync.SyncBool(mFirstBallMovedBackwards);
+    theSync.SyncBool(mHaveSets);
+    theSync.SyncLong(mPathLightEndFrame);
+    theSync.SyncBool(mHadPowerUp);
+    theSync.SyncLong(mLastPathShowTick);
+    theSync.SyncLong(mLastClearedBallPoint);
+    theSync.SyncBool(mStopAddingBalls);
+    theSync.SyncBool(mInDanger);
+}
 
 void CurveMgr::DeleteBullet(Bullet *theBullet)
 {
@@ -942,8 +1019,7 @@ bool CurveMgr::CheckSet(Ball *theBall)
     Ball *aNextEnd = NULL;
     int aComboCount = theBall->GetComboCount();
 
-    int aCount = GetNumInARow(theBall, theBall->GetType(), &aNextEnd, &aPrevEnd);
-    if (aCount < 3)
+    if (GetNumInARow(theBall, theBall->GetType(), &aNextEnd, &aPrevEnd) < 3)
     {
         return false;
     }
@@ -958,9 +1034,9 @@ bool CurveMgr::CheckSet(Ball *theBall)
     for (int i = 0; i < PowerType_Max; i++)
         gGotPowerUp[i] = false;
 
+    Ball *anEndBall = aNextEnd->GetNextBall();
     int aGapBonus = 0;
     int aNumGaps = 0;
-    Ball *anEndBall = aNextEnd->GetNextBall();
 
     for (Ball *aBall = aPrevEnd; aBall != anEndBall; aBall = aBall->GetNextBall())
     {
@@ -993,7 +1069,8 @@ bool CurveMgr::CheckSet(Ball *theBall)
         aBall->SetComboCount(aComboCount, mBoard->mCurComboScore);
     }
 
-    for (BallList::iterator anItr = mBoard->mNeedComboCount.begin();
+    BallList::iterator anItr = mBoard->mNeedComboCount.begin();
+    for (;
          anItr != mBoard->mNeedComboCount.end();
          anItr++)
     {
@@ -1072,11 +1149,11 @@ void CurveMgr::DoScoring(Ball *theBall, int theNumBalls, int theComboCount, int 
         ++mBoard->mLevelStats.mNumGaps;
 
     int theColor = gTextBallColors[theBall->GetType()];
-    aFloat.AddText(Sexy::StrFormat(_S("+%d"), aNumPoints), Sexy::FONT_FLOAT_ID, theColor);
+    aFloat.AddText(Sexy::StrFormat("+%d", aNumPoints), Sexy::FONT_FLOAT_ID, theColor);
 
     if (theComboCount > 0)
     {
-        aFloat.AddText(Sexy::StrFormat(_S("COMBO x%d"), theComboCount + 1), Sexy::FONT_FLOAT_ID, theColor);
+        aFloat.AddText(Sexy::StrFormat("COMBO x%d", theComboCount + 1), Sexy::FONT_FLOAT_ID, theColor);
     }
 
     if (theGapBonus > 0)
@@ -1108,7 +1185,7 @@ void CurveMgr::DoScoring(Ball *theBall, int theNumBalls, int theComboCount, int 
 
     if (inARow)
     {
-        aFloat.AddText(Sexy::StrFormat(_S("CHAIN BONUS x%d"), aRowBonus), Sexy::FONT_FLOAT_ID, theColor);
+        aFloat.AddText(Sexy::StrFormat("CHAIN BONUS x%d", aRowBonus), Sexy::FONT_FLOAT_ID, theColor);
         mBoard->mSoundMgr->AddSound(Sexy::SOUND_CHAIN_BONUS, 0, 0, mBoard->mNumClearsInARow - 5);
     }
 
@@ -1117,17 +1194,17 @@ void CurveMgr::DoScoring(Ball *theBall, int theNumBalls, int theComboCount, int 
 
     if (gGotPowerUp[PowerType_SlowDown])
     {
-        aFloat.AddText(_S("SLOWDOWN Ball"), Sexy::FONT_FLOAT_ID, theColor);
+        aFloat.AddText("SLOWDOWN Ball", Sexy::FONT_FLOAT_ID, theColor);
     }
 
     if (gGotPowerUp[PowerType_MoveBackwards])
     {
-        aFloat.AddText(_S("BACKWARDS Ball"), Sexy::FONT_FLOAT_ID, theColor);
+        aFloat.AddText("BACKWARDS Ball", Sexy::FONT_FLOAT_ID, theColor);
     }
 
     if (gGotPowerUp[PowerType_Accuracy])
     {
-        aFloat.AddText(_S("ACCURACY Ball"), Sexy::FONT_FLOAT_ID, theColor);
+        aFloat.AddText("ACCURACY Ball", Sexy::FONT_FLOAT_ID, theColor);
     }
 
     aFloat.AddToMgr(mBoard->mParticleMgr, aClrX, aClrY);
@@ -1591,8 +1668,7 @@ void CurveMgr::UpdateSets()
             if (aNextBall != NULL && aNextBall->GetClearCount() == 0 && aPrevBall != NULL && aNextBall->GetType() == aPrevBall->GetType())
             {
                 aNextBall->SetSuckCount(10);
-                int aComboScore = aBall->GetComboScore();
-                aNextBall->SetComboCount(aBall->GetComboCount() + 1, aComboScore);
+                aNextBall->SetComboCount(aBall->GetComboCount() + 1, aBall->GetComboScore());
             }
 
             if (anItr == mBallList.begin())
@@ -1648,7 +1724,7 @@ void CurveMgr::RemoveBallsAtFront()
             mBoard->UpdateBallColorMap(aBall, false);
         }
 
-        if (aBall->GetClearCount() || mStopAddingBalls)
+        if (aBall->GetClearCount() != 0 || mStopAddingBalls)
         {
             DeleteBall(aBall);
         }
@@ -1827,11 +1903,11 @@ void CurveMgr::ActivateBomb(Ball *theBall)
 {
     int aColor = gBallColors[theBall->GetType()];
     int aBallX = theBall->GetX();
-    int aBallY = theBall->GetX();
+    int aBallY = theBall->GetY();
     mBoard->mParticleMgr->AddExplosion(aBallX, aBallY, 0, aColor, 5);
     int v19 = Sexy::IMAGE_EXPLOSION->mWidth / 3;
 
-    for (int i = v19, a6 = 7; i <= 99; i += v19, a6 += 4)
+    for (int i = v19, a6 = 7; i < 100; i += v19, a6 += 4)
     {
         float v21 = 0.0f;
         do

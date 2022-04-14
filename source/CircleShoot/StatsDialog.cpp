@@ -136,12 +136,11 @@ void StatsDialog::Update()
             {
                 mBoard->mSoundMgr->AddSound(
                     Sexy::SOUND_BONUS_EXPLOSION, 0, 0,
-                    (float)mTimeBonus / (mIsWinning ? 25000.0 : 1000.0));
-                mTimeBonus = mTimeBonus;
+                    (float)mTimeBonus / (mIsWinning ? 25000.0f : 1000.0f));
             }
 
             int aOldTimeBonus = mTimeBonus;
-            mTimeBonus += (!mIsWinning ? -2400 : 0) + mTimeBonus + 2500;
+            mTimeBonus = (!mIsWinning ? -2400 : 0) + mTimeBonus + 2500;
             if (mTimeBonus > mTargetTimeBonus)
             {
                 mTimeBonus = mTargetTimeBonus;
@@ -194,6 +193,7 @@ void StatsDialog::Draw(Graphics *g)
     int aCol2 = aDialogLeft + 140;
     int aCol3 = aDialogLeft + 220;
     int aCol4 = aDialogLeft + 320;
+    int v34;
 
     int aLineOffset = 6 + Sexy::FONT_MAIN12->GetLineSpacing();
     if (!mIsGameOver)
@@ -240,6 +240,60 @@ void StatsDialog::Draw(Graphics *g)
         g->SetColor(Color(0xF8F792));
         g->DrawString(mBestTimeLeft, aCol3, aDialogTop + 4 * aLineOffset);
         g->DrawString(mBestTimeLeft, aCol3, aDialogTop + 5 * aLineOffset);
+
+        v34 = aDialogTop + 7 * aLineOffset;
+    }
+    else
+    {
+        int v33 = aDialogLeft + 350;
+        int v32 = aDialogLeft + 130;
+
+        if (mIsWinning)
+        {
+            g->SetColor(Color(0xFFFF00));
+            g->DrawString("EXTRA LIFE BONUS", aCol1, aDialogTop);
+            g->SetColor(Color(0x2AFF03));
+            if (mTimeBonus > 0)
+            {
+                g->DrawString(Sexy::StrFormat("+%d", mTimeBonus), aCol3, aDialogTop);
+            }
+
+            aDialogTop += 2 * aLineOffset;
+        }
+
+        g->SetColor(Color(0xFFFF00));
+        g->DrawString("TOTAL TIME", aCol1, aDialogTop);
+        g->DrawString("COMBOS", aCol1, aDialogTop + aLineOffset);
+        g->DrawString("COINS", aCol1, aDialogTop + 2 * aLineOffset);
+        g->DrawString("GAPS", aCol3, aDialogTop);
+        g->DrawString("MAX CHAIN", aCol3, aDialogTop + aLineOffset);
+        g->DrawString("MAX COMBO", aCol3, aDialogTop + 2 * aLineOffset);
+
+        g->SetColor(Color(0xFFA500));
+        g->DrawString(Sexy::GetTimeString(mBoard->mGameStats.mTimePlayed / 100), v32, aDialogTop);
+        g->DrawString(itoa(mBoard->mGameStats.mNumCombos, buf, 10), v32, aDialogTop + aLineOffset);
+        g->DrawString(itoa(mBoard->mGameStats.mNumGemsCleared, buf, 10), v32, aDialogTop + 2 * aLineOffset);
+        g->DrawString(itoa(mBoard->mGameStats.mNumGaps, buf, 10), v33, aDialogTop);
+        g->DrawString(itoa(mBoard->mGameStats.mMaxInARow, buf, 10), v33, aDialogTop + aLineOffset);
+        g->DrawString(itoa(mBoard->mGameStats.mMaxCombo + 1, buf, 10), v33, aDialogTop + 2 * aLineOffset);
+
+        v34 = aDialogTop + 4 * aLineOffset;
+    }
+
+    if (!mCurrentTip.empty())
+    {
+        g->SetColor(Color(0xFFFF00));
+        g->DrawString("TIP", aCol1, v34 + 4);
+        g->SetColor(Color(0xFFFFFF));
+        g->SetFont(Sexy::FONT_DIALOG);
+
+        Rect aRc = Rect(
+            GetLeft() - mX + 60,
+            v34 - g->GetFont()->GetAscent(),
+            GetWidth() - 80,
+            200);
+
+        WriteWordWrapped(g, aRc, mCurrentTip, -1, -1);
     }
 }
 
