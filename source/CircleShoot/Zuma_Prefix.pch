@@ -1,0 +1,18 @@
+//
+// Prefix header for all source files of the 'Zuma' target in the 'Zuma' project.
+//
+
+//#include <Carbon/Carbon.h>
+
+//#define MAC
+#define SEXY_DISABLE_MODVAL
+
+#ifdef __GNUC__
+    #ifdef __BIG_ENDIAN__
+        #define PLATFORM_BIG_ENDIAN
+	#else
+        #undef PLATFORM_BIG_ENDIAN
+    #endif
+#else
+    #define PLATFORM_BIG_ENDIAN
+#endif
