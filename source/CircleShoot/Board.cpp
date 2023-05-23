@@ -22,6 +22,7 @@
 #include "ProfileMgr.h"
 #include "SoundMgr.h"
 #include "SpriteMgr.h"
+#include "StatsDialog.h"
 #include "TransitionMgr.h"
 #include "Res.h"
 #include "WayPoint.h"
@@ -62,6 +63,40 @@ GameStats::GameStats()
     mMaxComboScore = 0;
     mMaxInARow = 0;
     mMaxInARowScore = 0;
+}
+
+void GameStats::Reset()
+{
+    mTimePlayed = 0;
+    mNumBallsCleared = 0;
+    mNumGemsCleared = 0;
+    mNumGaps = 0;
+    mNumCombos = 0;
+    mMaxCombo = -1;
+    mMaxComboScore = 0;
+    mMaxInARow = 0;
+    mMaxInARowScore = 0;
+}
+
+void GameStats::Add(const GameStats &theStats)
+{
+    mTimePlayed += theStats.mTimePlayed;
+    mNumBallsCleared += theStats.mNumBallsCleared;
+    mNumGemsCleared += theStats.mNumGemsCleared;
+    mNumCombos += theStats.mNumCombos;
+    mNumGaps += theStats.mNumGaps;
+
+    if (theStats.mMaxCombo > mMaxCombo || theStats.mMaxCombo == mMaxCombo && theStats.mMaxComboScore > mMaxComboScore)
+    {
+        mMaxCombo = theStats.mMaxCombo;
+        mMaxComboScore = theStats.mMaxComboScore;
+    }
+
+    if (theStats.mMaxInARow > this->mMaxInARow)
+    {
+        mMaxInARow = theStats.mMaxInARow;
+        mMaxInARowScore = theStats.mMaxInARowScore;
+    }
 }
 
 void GameStats::SyncState(DataSync &theSync)
@@ -244,53 +279,34 @@ void Board::SetLosing()
     mApp->mUnk30 = true;
     mSoundMgr->StopLoop(LoopType_RollIn);
 
-    if (mNumClearsInARow > mLevelStats.mMaxInARow)
-    {
-        mLevelStats.mMaxInARow = mNumClearsInARow;
-        mLevelStats.mMaxInARowScore = mCurInARowBonus;
-    }
-
-    mNumClearsInARow = 0;
-    mCurInARowBonus = 0;
-
-    mLevelStats.mTimePlayed += mStateCount;
-    mGameStats.mTimePlayed += mStateCount;
-    mGameStats.mNumBallsCleared += mLevelStats.mNumBallsCleared;
-    mGameStats.mNumGemsCleared += mLevelStats.mNumGemsCleared;
-    mGameStats.mNumCombos += mLevelStats.mNumCombos;
-    mGameStats.mNumGaps += mLevelStats.mNumGaps;
-
-    if (mLevelStats.mMaxCombo > mGameStats.mMaxCombo)
-    {
-        mGameStats.mMaxCombo = mLevelStats.mMaxCombo;
-        mGameStats.mMaxComboScore = mLevelStats.mMaxComboScore;
-    }
-    else if (mLevelStats.mMaxCombo == mGameStats.mMaxCombo)
-    {
-        if (mLevelStats.mMaxComboScore > mGameStats.mMaxComboScore)
-        {
-            mGameStats.mMaxCombo = mLevelStats.mMaxCombo;
-            mGameStats.mMaxComboScore = mLevelStats.mMaxComboScore;
-        }
-    }
-
-    if (mLevelStats.mMaxInARow > mGameStats.mMaxInARow)
-    {
-        mGameStats.mMaxInARow = mLevelStats.mMaxInARow;
-        mGameStats.mMaxInARowScore = mLevelStats.mMaxInARowScore;
-    }
-
-    mLevelStats.mTimePlayed = 0;
-    mLevelStats.mNumBallsCleared = 0;
-    mLevelStats.mNumGemsCleared = 0;
-    mLevelStats.mNumGaps = 0;
-    mLevelStats.mNumCombos = 0;
-    mLevelStats.mMaxCombo = 0;
-    mLevelStats.mMaxComboScore = 0;
-    mLevelStats.mMaxInARow = 0;
-    mLevelStats.mMaxInARowScore = 0;
-
+    ResetInARowBonus();
+    mLevelStats.mTimePlayed = mStateCount;
+    mGameStats.Add(mLevelStats);
+    mLevelStats.Reset();
     DeleteBullets();
+
+    if (!mGun->StartFire(false))
+    {
+        mGun->EmptyBullets();
+    }
+
+    for (int i = 0; i < mNumCurves; i++)
+    {
+        mCurveMgr[i]->SetLosing();
+    }
+
+    mSoundMgr->PlayLoop(LoopType_RollOut);
+    mGameState = GameState_Losing;
+    mStateCount = 0;
+    mLives = mLives - 1;
+
+    if (mLives <= 0)
+    {
+        mApp->PlaySong(39, false, 0.01);
+        CheckHighScore();
+    }
+
+    mTransitionMgr->DoLosing();
 }
 
 void Board::DoLevelUp(bool playSounds, bool isCheat)
@@ -423,22 +439,27 @@ void Board::CheckEndConditions()
         return;
 
     int i;
+    int mNumCurves = this->mNumCurves;
     for (i = 0; i < mNumCurves; i++)
     {
         if (!mCurveMgr[i]->IsWinning())
+        {
             break;
+        }
     }
 
     if (i == mNumCurves)
     {
-        DoLevelUp();
+        DoLevelUp(true, false);
         return;
     }
 
     for (i = 0; i < mNumCurves; i++)
     {
         if (mCurveMgr[i]->IsLosing())
+        {
             break;
+        }
     }
 
     if (i != mNumCurves)
@@ -447,14 +468,14 @@ void Board::CheckEndConditions()
         return;
     }
 
-    int k;
-    for (k = 0; k < i; k++)
+    i = 0;
+    for (i = 0; i < mNumCurves; i++)
     {
-        if (mCurveMgr[k]->IsInDanger())
+        if (mCurveMgr[i]->IsInDanger())
             break;
     }
 
-    mApp->SwitchSong((k == i) ? 0 : 36);
+    mApp->SwitchSong((i == mNumCurves) ? 0 : 36);
 }
 
 void Board::SyncPracticeMode()
@@ -522,9 +543,9 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
 
             for (int i = 0; i != 360; i += 36)
             {
-                float vx = cosf(i * M_PI / 180.0f);
-                float vy = sinf(i * M_PI / 180.0f);
-                uint32_t color = gBrightBallColors[Sexy::Rand() % 6];
+                float vx = cosf(i * SEXY_PI / 180.0f);
+                float vy = sinf(i * SEXY_PI / 180.0f);
+                uint color = gBrightBallColors[Sexy::Rand() % 6];
 
                 mParticleMgr->AddSparkle(mCurTreasure->x + vx * 16.0f, mCurTreasure->y + vx * 16.0f, 2 * vx, 2 * vy, 5, 0, Sexy::Rand() % 5, color);
             }
@@ -782,7 +803,7 @@ void Board::UpdateBallColorMap(Ball *theBall, bool added)
 
 void Board::UpdateGuide()
 {
-    float anAngle = mGun->GetAngle() - (M_PI / 2);
+    float anAngle = mGun->GetAngle() - (SEXY_PI / 2);
     float dx = sinf(anAngle);
     float dy = cosf(anAngle);
     float dx2 = dx;
@@ -845,6 +866,14 @@ void Board::UpdateGuide()
 
 void Board::UpdateTreasure()
 {
+    if (mTreasureZoomFrame != 0)
+    {
+        mTreasureZoomFrame++;
+        if (mTreasureZoomFrame > 40)
+        {
+            mTreasureZoomFrame = 0;
+        }
+    }
 }
 
 void Board::UpdateMiscStuff()
@@ -913,6 +942,54 @@ void Board::UpdateMiscStuff()
 
 void Board::DrawTreasure(Graphics *g)
 {
+    if (mCurTreasure != NULL)
+    {
+        int x = mCurTreasure->x;
+        int y = mCurTreasure->y;
+        int v10 = (mStateCount / 4) % 30;
+
+        g->SetColorizeImages(true);
+        g->SetColor(Color(0, 0, 0, 96));
+        g->DrawImageCel(Sexy::IMAGE_COIN, x - 28, y - 8, v10);
+        g->SetColorizeImages(false);
+        g->DrawImageCel(Sexy::IMAGE_COIN, x - 18, y - 18, v10);
+    }
+
+    if (mTreasureZoomFrame != 0)
+    {
+        float aScale = 1.0f + mTreasureZoomFrame / 30.0f;
+        int x = mTreasureZoomX + aScale * -18.0f;
+        int y = mTreasureZoomY + aScale * -18.0f;
+
+        int width = Sexy::IMAGE_COIN->mWidth;
+        int height = Sexy::IMAGE_COIN->mHeight / Sexy::IMAGE_COIN->mNumRows;
+
+        int offY = mTreasureZoomFrame + ((mStateCount - mTreasureZoomFrame + 1) / 4);
+
+        Rect rc1(0, height * (offY % 30), width, height);
+        Rect rc2(x, y, width * aScale, height * aScale);
+
+        bool hadFastStretch = g->GetFastStretch();
+
+        if (mApp->Is3DAccelerated())
+        {
+            Rect a3(x + aScale * -10.0f, y + aScale * 10.0f, width * aScale, height * aScale);
+
+            g->SetColorizeImages(true);
+            g->SetColor(Color(0, 0, 0, 96 - 96 * mTreasureZoomFrame / 40));
+            g->DrawImage(Sexy::IMAGE_COIN, a3, rc1);
+            g->SetFastStretch(false);
+            g->SetColor(Color(255, 255, 255, 255 - 255 * mTreasureZoomFrame / 40));
+        }
+        else
+        {
+            g->SetFastStretch(true);
+        }
+
+        g->DrawImage(Sexy::IMAGE_COIN, rc2, rc1);
+        g->SetFastStretch(hadFastStretch);
+        g->SetColorizeImages(false);
+    }
 }
 
 void Board::DrawPlaying(Graphics *g)
@@ -1243,17 +1320,17 @@ void Board::MouseMove(int x, int y)
         float v4 = atanf((float)(mGun->GetCenterY() - y) / (float)fromCenterX);
         if (fromCenterX < 0)
         {
-            v4 += M_PI;
+            v4 += SEXY_PI;
         }
 
-        angle = v4 + (M_PI / 2.0);
+        angle = v4 + (SEXY_PI / 2.0);
     }
     else
     {
         angle = 0.0f;
         if (y < mGun->GetCenterY())
         {
-            angle = M_PI;
+            angle = SEXY_PI;
         }
     }
 
@@ -1326,7 +1403,7 @@ void Board::KeyChar(char theChar)
     {
         mSpriteMgr->ToggleSpaceScroll();
     }
-    else if (c == 'P')
+    else if (c == 'P') // TODO THIS IS EXTRA DEBUG FUNCTIONALITY
     {
         mScore = mScoreTarget;
 
@@ -1452,22 +1529,14 @@ void Board::Reset(bool gameOver, bool isLevelReset)
 
     if (gameOver)
     {
-        mGameStats.mTimePlayed = 0;
-        mGameStats.mNumBallsCleared = 0;
-        mGameStats.mNumGemsCleared = 0;
-        mGameStats.mNumGaps = 0;
-        mGameStats.mNumCombos = 0;
-        mGameStats.mMaxCombo = -1;
-        mGameStats.mMaxComboScore = 0;
-        mGameStats.mMaxInARow = 0;
-        mGameStats.mMaxInARowScore = 0;
+        mGameStats.Reset();
 
         mScore = 0;
         mScoreDisplay = 0;
         mCurBarSize = 0;
         mDifficultyDiff = 0;
         mLevel = mStartLevel;
-        mLives = !mIsEndless ? 3 : 1;
+        mLives = 2 * (!mIsEndless) + 1;
 
         mOldCurveList.clear();
         SyncPracticeMode();
@@ -1483,15 +1552,7 @@ void Board::Reset(bool gameOver, bool isLevelReset)
         mApp->DemoAddMarker(Sexy::StrFormat("NewLevel: %d", mLevel));
     }
 
-    mLevelStats.mTimePlayed = 0;
-    mLevelStats.mNumBallsCleared = 0;
-    mLevelStats.mNumGemsCleared = 0;
-    mLevelStats.mNumGaps = 0;
-    mLevelStats.mNumCombos = 0;
-    mLevelStats.mMaxCombo = -1;
-    mLevelStats.mMaxComboScore = 0;
-    mLevelStats.mMaxInARow = 0;
-    mLevelStats.mMaxInARowScore = 0;
+    mLevelStats.Reset();
 
     mShowGuide = false;
     mRecalcGuide = false;
@@ -1661,11 +1722,17 @@ void Board::SyncState(DataSync &theSync)
     if (theSync.mReader)
     {
         theSync.SyncBytes(&mGameState, 4);
+
+#ifdef CIRCLE_ENDIAN_SWAP_ENABLED
         mGameState = (GameState)ByteSwap(mGameState);
+#endif
     }
     else
     {
+#ifdef CIRCLE_ENDIAN_SWAP_ENABLED
         mGameState = (GameState)ByteSwap(mGameState);
+#endif
+
         theSync.SyncBytes(&mGameState, 4);
     }
 
@@ -1777,11 +1844,119 @@ void Board::SyncState(DataSync &theSync)
     }
 }
 
-void Board::SaveGame(const std::string &theFilePath) {}
+void Board::SaveGame(const std::string &theFilePath)
+{
+    WaitForLoadingThread();
+    DataWriter aWriter;
+    // idk what this is for, some debugging leftover?
+    // just gets written to in the original code, but never read anywhere.
+    int aUnkState = 0;
+    aWriter.OpenMemory(0x20);
 
-void Board::LoadGame(const std::string &theFilePath) {}
+    StatsDialog *aDialog = reinterpret_cast<StatsDialog *>(mApp->GetDialog(DialogType_Stats));
+    if (aDialog)
+        aDialog->FinishScoreInc();
 
-void Board::LoadGame(Buffer &theBuffer) {}
+    aWriter.WriteLong(gSaveGameVersion);
+
+    Sexy::LevelDesc *aNextLevelDesc = mIsWinning ? mNextLevelDesc : mLevelDesc;
+
+    aWriter.WriteBool(!mPracticeBoard.empty());
+    aWriter.WriteString(mVerboseLevelString);
+    aWriter.WriteString(mNextLevelDesc->mDisplayName);
+    aWriter.WriteLong(mScore);
+    aWriter.WriteString(mPracticeBoard);
+    aWriter.WriteShort(mLevel);
+    aWriter.WriteBool(aDialog != NULL);
+    aWriter.WriteString(mLevelDesc->mName);
+    aWriter.WriteString(mNextLevelDesc->mName);
+
+    {
+        DataSync aDataSync(aWriter);
+        aUnkState = 1;
+
+        SyncState(aDataSync);
+        aDataSync.SyncPointers();
+        mApp->WriteBytesToFile(theFilePath, aWriter.mMemoryHandle, aWriter.mMemoryPosition);
+        mApp->ClearUpdateBacklog();
+        aUnkState = 0;
+    }
+
+    aUnkState = -1;
+}
+
+void Board::LoadGame(const std::string &theFilePath) {
+    // Stub, code not present in executable.
+}
+
+void Board::LoadGame(Buffer &theBuffer)
+{
+    this->mIsSavedGame = true;
+
+    DataReader aReader;
+    // Same thing as in Board::SaveGame()
+    int aUnkState = 0;
+    aReader.OpenMemory(theBuffer.GetDataPtr(), theBuffer.GetDataLen(), false);
+
+    {
+        DataSync aDataSync(aReader);
+        aUnkState = 2;
+
+        // all of those get their return values ignored for some reason.
+        int version = aReader.ReadLong();
+        std::string aLevelString;
+        aUnkState = 3;
+
+        bool isPractice = aReader.ReadBool();
+        aReader.ReadString(aLevelString);
+        aReader.ReadString(aLevelString);
+        int aScore = aReader.ReadLong();
+
+        aReader.ReadString(mPracticeBoard);
+        mLevel = aReader.ReadShort();
+        bool isStatsDialogOpen = aReader.ReadBool();
+
+        {
+            std::string aLevelName;
+            std::string aNextLevelName;
+            aUnkState = 5;
+
+            aReader.ReadString(aLevelName);
+            aReader.ReadString(aNextLevelName);
+            SyncPracticeMode();
+
+            SetupNextLevel(mLevel, aLevelName.c_str());
+
+            if (mPracticeMode == PracticeMode_Single)
+            {
+                SetLevelToNextLevel();
+                GetLevel(mLevel + 1, mNextLevelDesc);
+            }
+            else
+            {
+                SetupNextLevel(mLevel + 1, aNextLevelName.c_str());
+            }
+
+            SyncState(aDataSync);
+            aDataSync.SyncPointers();
+
+            if (mIsWinning && mLevelDesc->mStage < 13)
+                Reset(false);
+
+            if (isStatsDialogOpen)
+            {
+                mApp->DoStatsDialog(false, false);
+                mPauseFade = 50;
+            }
+        }
+
+        aUnkState = 1;
+        mApp->ClearUpdateBacklog();
+        aUnkState = 0;
+    }
+
+    aUnkState = -1;
+}
 
 void Board::IncScore(int theInc, bool delayDisplay)
 {
@@ -1912,23 +2087,23 @@ void Board::SetLevelToNextLevel()
 
 void Board::GetLevel(int theLevel, LevelDesc *theLevelDesc, const char *theLevelName)
 {
-    int aUnk = 0;
+    int aNumColors = 0;
 
     if (mPracticeBoard.empty())
     {
         *theLevelDesc = mApp->mLevelParser->GetStageLevel(theLevel);
-        aUnk = theLevelDesc->mStage / 3 + 4;
+        aNumColors = theLevelDesc->mStage / 3 + 4;
 
-        if (aUnk > 6)
-            aUnk = 6;
+        if (aNumColors > 6)
+            aNumColors = 6;
     }
     else
     {
-        int aStage = theLevel / 7;
         int aLevel = theLevel % 7;
+        int aStage = theLevel / 7;
         int aDifficulty = mDifficultyDiff + aLevel + 2 * aStage;
 
-        for (aUnk = aStage + 4; aUnk >= 7; --aUnk)
+        for (aNumColors = aStage + 4; aNumColors > 6; --aNumColors)
             aDifficulty += 5;
 
         if (theLevelName != NULL)
@@ -1936,8 +2111,7 @@ void Board::GetLevel(int theLevel, LevelDesc *theLevelDesc, const char *theLevel
             printf("Level name: %s\n", theLevelName);
             *theLevelDesc = mApp->mLevelParser->GetLevelByName(theLevelName, aDifficulty);
         }
-
-        if (mPracticeMode == PracticeMode_Single)
+        else if (mPracticeMode == PracticeMode_Single)
         {
             *theLevelDesc = mApp->mLevelParser->GetLevelByName(mPracticeBoard, aDifficulty);
             printf("Practice board: %s\n", mPracticeBoard.c_str());
@@ -1980,13 +2154,13 @@ void Board::GetLevel(int theLevel, LevelDesc *theLevelDesc, const char *theLevel
 
         theLevelDesc->mStage = aStage;
         theLevelDesc->mLevel = aLevel;
-        theLevelDesc->mParTime += 10 * aUnk - 40;
+        theLevelDesc->mParTime += 10 * aNumColors - 40;
     }
 
     int aNumCurves = theLevelDesc->GetNumCurves();
     for (int i = 0; i < aNumCurves; i++)
     {
-        theLevelDesc[i].mReloadDelay = aUnk;
+        theLevelDesc->mCurveDesc[i].mNumColors = aNumColors;
     }
 }
 

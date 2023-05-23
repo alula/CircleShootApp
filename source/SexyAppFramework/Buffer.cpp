@@ -243,7 +243,7 @@ void Buffer::FromWebString(const std::string& theString)
 	{
 		uchar aChar = theString[aCharIdx++];
 		int aVal = gWebDecodeMap[aChar];
-		int aNumBits = std::min(aNumBitsLeft, 6);
+		int aNumBits = min(aNumBitsLeft, 6);
 		WriteNumBits(aVal, aNumBits);
 		aNumBitsLeft -= aNumBits;		
 	}

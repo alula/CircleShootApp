@@ -112,7 +112,7 @@ namespace Sexy
 
 		void Clear();
 		void AddSparkle(float x, float y, int thePriority, int theStagger = 0); // inlined but idk what parameters it passes
-		void AddSparkle(float x, float y, float vx, float vy, int thePriority, int theDuration = 0, int theStagger = 0, uint32_t theColor = 0xFFFF00);
+		void AddSparkle(float x, float y, float vx, float vy, int thePriority, int theDuration = 0, int theStagger = 0, uint theColor = 0xFFFF00);
 		void AddExplosion(int x, int y, int theRadius, int theColor, int theStagger = 0);
 		void AddFloatingText(int x, int y, int theColor, const std::string &theText, int theFontId, int theStagger = 0, int theScoreInc = 0, int theDuration = 100, bool fade = false);
 

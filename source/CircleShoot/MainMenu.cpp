@@ -17,7 +17,7 @@
 #include "Res.h"
 #include "MainMenu.h"
 
-#include <cmath>
+#include <math.h>
 
 using namespace Sexy;
 
@@ -143,6 +143,12 @@ void MainMenu::ButtonDepress(int theId)
         break;
     case 2:
         app->DoOptionsDialog();
+        break;
+    case 3:
+        app->ShowMoreGamesScreen();
+        break;
+    case 4:
+        app->DoConfirmQuitDialog();
         break;
     default:
         break;
@@ -339,7 +345,7 @@ void MainMenu::Draw(Graphics *g)
 
     if (app->Is3DAccelerated())
     {
-        double angle = (mUpdateCnt * M_PI / 180.0) * 0.3;
+        double angle = (mUpdateCnt * SEXY_PI / 180.0) * 0.3;
         g->DrawImageRotated(Sexy::IMAGE_SUNGLOW, -69, -63, angle);
     }
     else

@@ -191,11 +191,15 @@ int Bullet::GetMinGapDist()
 
 void Bullet::RemoveGapInfoForBall(int theBallId)
 {
-    for (GapInfoVector::iterator i = mGapInfo.begin(); i != mGapInfo.end(); i++)
+    for (GapInfoVector::iterator i = mGapInfo.begin(); i != mGapInfo.end();)
     {
         if (i->mBallId == theBallId)
         {
-            mGapInfo.erase(i);
+            mGapInfo.erase(i++);
+        }
+        else
+        {
+            i++;
         }
     }
 }

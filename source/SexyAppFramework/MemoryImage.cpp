@@ -185,10 +185,10 @@ void MemoryImage::BitsChanged()
 
 void MemoryImage::NormalDrawLine(double theStartX, double theStartY, double theEndX, double theEndY, const Color& theColor)
 {
-	double aMinX = std::min(theStartX, theEndX);
-	double aMinY = std::min(theStartY, theEndY);
-	double aMaxX = std::max(theStartX, theEndX);
-	double aMaxY = std::max(theStartY, theEndY);
+	double aMinX = min(theStartX, theEndX);
+	double aMinY = min(theStartY, theEndY);
+	double aMaxX = max(theStartX, theEndX);
+	double aMaxY = max(theStartY, theEndY);
 
 	ulong aRMask = 0xFF0000;
 	ulong aGMask = 0x00FF00;
@@ -475,10 +475,10 @@ void MemoryImage::NormalDrawLine(double theStartX, double theStartY, double theE
 
 void MemoryImage::AdditiveDrawLine(double theStartX, double theStartY, double theEndX, double theEndY, const Color& theColor)
 {
-	double aMinX = std::min(theStartX, theEndX);
-	double aMinY = std::min(theStartY, theEndY);
-	double aMaxX = std::max(theStartX, theEndX);
-	double aMaxY = std::max(theStartY, theEndY);
+	double aMinX = min(theStartX, theEndX);
+	double aMinY = min(theStartY, theEndY);
+	double aMaxX = max(theStartX, theEndX);
+	double aMaxY = max(theStartY, theEndY);
 
 	ulong aRMask = 0xFF0000;
 	ulong aGMask = 0x00FF00;
@@ -663,16 +663,16 @@ void MemoryImage::DrawLine(double theStartX, double theStartY, double theEndX, d
 {	
 	if (theStartY == theEndY)
 	{
-		int aStartX = std::min(theStartX, theEndX);
-		int aEndX = std::max(theStartX, theEndX);
+		int aStartX = min(theStartX, theEndX);
+		int aEndX = max(theStartX, theEndX);
 
 		FillRect(Rect(aStartX, theStartY, aEndX-aStartX+1, theEndY-theStartY+1), theColor, theDrawMode);
 		return;
 	}
 	else if (theStartX == theEndX)
 	{
-		int aStartY = std::min(theStartY, theEndY);
-		int aEndY = std::max(theStartY, theEndY);
+		int aStartY = min(theStartY, theEndY);
+		int aEndY = max(theStartY, theEndY);
 
 		FillRect(Rect(theStartX, aStartY, theEndX-theStartX+1, aEndY-aStartY+1), theColor, theDrawMode);
 		return;
@@ -779,16 +779,16 @@ void MemoryImage::DrawLineAA(double theStartX, double theStartY, double theEndX,
 {
 	if (theStartY == theEndY)
 	{
-		int aStartX = std::min(theStartX, theEndX);
-		int aEndX = std::max(theStartX, theEndX);
+		int aStartX = min(theStartX, theEndX);
+		int aEndX = max(theStartX, theEndX);
 
 		FillRect(Rect(aStartX, theStartY, aEndX-aStartX+1, theEndY-theStartY+1), theColor, theDrawMode);
 		return;
 	}
 	else if (theStartX == theEndX)
 	{
-		int aStartY = std::min(theStartY, theEndY);
-		int aEndY = std::max(theStartY, theEndY);
+		int aStartY = min(theStartY, theEndY);
+		int aEndY = max(theStartY, theEndY);
 
 		FillRect(Rect(theStartX, aStartY, theEndX-theStartX+1, aEndY-aStartY+1), theColor, theDrawMode);
 		return;
@@ -1374,7 +1374,7 @@ void MemoryImage::Clear()
 
 void MemoryImage::AdditiveBlt(Image* theImage, int theX, int theY, const Rect& theSrcRect, const Color& theColor)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	MemoryImage* aSrcMemoryImage = dynamic_cast<MemoryImage*>(theImage);
 
@@ -1414,7 +1414,7 @@ void MemoryImage::AdditiveBlt(Image* theImage, int theX, int theY, const Rect& t
 
 void MemoryImage::NormalBlt(Image* theImage, int theX, int theY, const Rect& theSrcRect, const Color& theColor)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	MemoryImage* aSrcMemoryImage = dynamic_cast<MemoryImage*>(theImage);
 
@@ -1456,7 +1456,7 @@ void MemoryImage::NormalBlt(Image* theImage, int theX, int theY, const Rect& the
 
 void MemoryImage::Blt(Image* theImage, int theX, int theY, const Rect& theSrcRect, const Color& theColor, int theDrawMode)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	DBG_ASSERTE((theColor.mRed >= 0) && (theColor.mRed <= 255));
 	DBG_ASSERTE((theColor.mGreen >= 0) && (theColor.mGreen <= 255));
@@ -1478,7 +1478,7 @@ void MemoryImage::Blt(Image* theImage, int theX, int theY, const Rect& theSrcRec
 ///////////////////////////////////////////////////////////////////////////////
 void MemoryImage::BltF(Image* theImage, float theX, float theY, const Rect& theSrcRect, const Rect &theClipRect, const Color& theColor, int theDrawMode)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	BltRotated(theImage,theX,theY,theSrcRect,theClipRect,theColor,theDrawMode,0,0,0);
 }
@@ -1571,7 +1571,7 @@ bool MemoryImage::StretchBltMirrorClipHelper(const Rect &theSrcRect, const Rect 
 ///////////////////////////////////////////////////////////////////////////////
 void MemoryImage::BltRotated(Image* theImage, float theX, float theY, const Rect &theSrcRect, const Rect& theClipRect, const Color& theColor, int theDrawMode, double theRot, float theRotCenterX, float theRotCenterY)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	// This BltRotatedClipHelper clipping used to happen in Graphics::DrawImageRotated
 	FRect aDestRect;
@@ -1629,7 +1629,7 @@ void MemoryImage::BltRotated(Image* theImage, float theX, float theY, const Rect
 
 void MemoryImage::SlowStretchBlt(Image* theImage, const Rect& theDestRect, const FRect& theSrcRect, const Color& theColor, int theDrawMode)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	// This thing was a pain to write.  I bet i could have gotten something just as good
 	// from some Graphics Gems book.	
@@ -1673,7 +1673,7 @@ void MemoryImage::SlowStretchBlt(Image* theImage, const Rect& theDestRect, const
 //TODO: Make the special version
 void MemoryImage::FastStretchBlt(Image* theImage, const Rect& theDestRect, const FRect& theSrcRect, const Color& theColor, int theDrawMode)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	MemoryImage* aSrcMemoryImage = dynamic_cast<MemoryImage*>(theImage);
 
@@ -1738,7 +1738,7 @@ void MemoryImage::FastStretchBlt(Image* theImage, const Rect& theDestRect, const
 
 void MemoryImage::StretchBlt(Image* theImage, const Rect& theDestRect, const Rect& theSrcRect, const Rect& theClipRect, const Color& theColor, int theDrawMode, bool fastStretch)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	Rect aDestRect;
 	FRect aSrcRect;
@@ -1787,7 +1787,7 @@ void MemoryImage::BltMatrixHelper(Image* theImage, float x, float y, const SexyM
 
 void MemoryImage::BltMatrix(Image* theImage, float x, float y, const SexyMatrix3 &theMatrix, const Rect& theClipRect, const Color& theColor, int theDrawMode, const Rect &theSrcRect, bool blend)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	DWORD *aSurface = GetBits();
 	int aPitch = mWidth*4;
@@ -1866,7 +1866,7 @@ void MemoryImage::FillScanLinesWithCoverage(Span* theSpans, int theSpanCount, co
 
 void MemoryImage::BltTrianglesTex(Image *theTexture, const TriVertex theVertices[][3], int theNumTriangles, const Rect& theClipRect, const Color &theColor, int theDrawMode, float tx, float ty, bool blend)
 {
-	theTexture->mDrawn = true;
+	// theTexture->mDrawn = true;
 
 	DWORD *aSurface = GetBits();
 

@@ -206,6 +206,27 @@ void CircleShootApp::ButtonDepress(int theId)
     CheckYesNoButton(theId);
 }
 
+Dialog *CircleShootApp::NewDialog(int theDialogId,
+                                  bool isModal,
+                                  const SexyString &theDialogHeader,
+                                  const SexyString &theDialogLines,
+                                  const SexyString &theDialogFooter,
+                                  int theButtonMode)
+{
+    CircleDialog *aDialog = new CircleDialog(Sexy::IMAGE_DIALOG_BACK,
+                                             Sexy::IMAGE_DIALOG_BUTTON,
+                                             theDialogId,
+                                             isModal,
+                                             theDialogHeader,
+                                             theDialogLines,
+                                             theDialogFooter,
+                                             theButtonMode,
+                                             false);
+
+    Sexy::SetupDialog(aDialog, 348);
+    return aDialog;
+}
+
 void CircleShootApp::MakeBoard()
 {
     mUnk24 = false;
@@ -348,41 +369,43 @@ void CircleShootApp::SaveProfile()
 
 void CircleShootApp::LoadingThreadProc()
 {
-    const char *resourceGroups[6];
-    resourceGroups[1] = "Register";
-    resourceGroups[2] = "LoadingThread";
-    resourceGroups[3] = "MainMenu";
-    resourceGroups[4] = "AdventureScreen";
-    resourceGroups[5] = "GauntletScreen";
+    const char *resourceGroups[5];
+    resourceGroups[0] = "Register";
+    resourceGroups[1] = "LoadingThread";
+    resourceGroups[2] = "MainMenu";
+    resourceGroups[3] = "AdventureScreen";
+    resourceGroups[4] = "GauntletScreen";
 
     mUnk28 = 0;
     mNumLoadingThreadTasks = 0;
+	int i;
 
-    for (int i = 1; i != 6; ++i)
+    for (i = 0; i < 5; i++)
     {
         mNumLoadingThreadTasks +=
             mResourceManager->GetNumResources(resourceGroups[i]);
     }
     ++mNumLoadingThreadTasks;
 
-    int i = 0;
+    i = 0;
     for (;;)
     {
-        mResourceManager->StartLoadResources(resourceGroups[i + 1]);
+        mResourceManager->StartLoadResources(resourceGroups[i]);
 
         while (mResourceManager->LoadNextResource())
             ++mCompletedLoadingThreadTasks;
 
         if (mResourceManager->HadError() ||
             i == 0 && !Sexy::ExtractResourcesByName(mResourceManager,
-                                                    resourceGroups[1]))
+                                                    resourceGroups[0]))
         {
             break;
         }
 
         ++mUnk28;
+		++i;
 
-        if (++i == 5)
+        if (i == 5)
         {
             Sexy::SharedImageRef checkBoxLine = mResourceManager->GetImage("IMAGE_DIALOG_CHECKBOXLINE");
             if (checkBoxLine.mSharedImage != NULL)
@@ -421,10 +444,10 @@ void CircleShootApp::LoadingThreadProc()
                 mResourceManager->ReplaceFont("FONT_MAIN8OUTLINE", imFont);
             }
 
-            int v10 = 0;
-            while (Sexy::ExtractResourcesByName(mResourceManager, resourceGroups[v10 + 2]))
+            int v10 = 1;
+            while (Sexy::ExtractResourcesByName(mResourceManager, resourceGroups[v10]))
             {
-                if (++v10 == 4)
+                if (++v10 >= 5)
                 {
                     ++mCompletedLoadingThreadTasks;
                     return;
@@ -476,6 +499,16 @@ void CircleShootApp::FinishStatsDialog()
     }
 }
 
+void CircleShootApp::FinishConfirmQuitDialog(bool quit)
+{
+    KillDialog(DialogType_ConfirmQuit);
+
+    if (quit)
+    {
+        Shutdown();
+    }
+}
+
 void CircleShootApp::DoStatsDialog(bool slide, bool doCounter)
 {
     if (mBoard == NULL)
@@ -501,6 +534,11 @@ void CircleShootApp::DoStatsDialog(bool slide, bool doCounter)
 
 void CircleShootApp::DoCreateUserDialog()
 {
+}
+
+void CircleShootApp::DoConfirmQuitDialog()
+{
+    DoDialog(DialogType_ConfirmQuit, true, "Quit Zuma?", "Are you sure you want to\nquit the game?", "", Dialog::BUTTONS_YES_NO);
 }
 
 void CircleShootApp::SwitchSong(int id)
@@ -618,7 +656,7 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishConfirmMainMenuDialog(true);
             return true;
         case 2021:
-            // FinishConfirmQuitDialog(true);
+            FinishConfirmQuitDialog(true);
             return true;
         case 2022:
             // FinishNeedRegisterDialog(true);
@@ -665,7 +703,7 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishConfirmMainMenuDialog(false);
             return true;
         case 3021:
-            // FinishConfirmQuitDialog(false);
+            FinishConfirmQuitDialog(false);
             return true;
         case 3022:
             // FinishNeedRegisterDialog(false);
@@ -739,4 +777,8 @@ void CircleShootApp::ShowPracticeScreeen(bool a2)
         PlaySong(34, true, 0.01);
         ClearUpdateBacklog();
     }
+}
+
+void CircleShootApp::ShowMoreGamesScreen()
+{
 }

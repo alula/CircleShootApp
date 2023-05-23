@@ -727,8 +727,8 @@ static void CopyImageToTexture(LPDIRECTDRAWSURFACE7 theTexture, MemoryImage *the
 	if (D3DInterface::CheckDXError(theTexture->Lock(NULL,&aDesc,DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY,NULL),"Lock Texture"))
 		return;
 
-	int aWidth = std::min(texWidth,(theImage->GetWidth()-offx));
-	int aHeight = std::min(texHeight,(theImage->GetHeight()-offy));
+	int aWidth = min(texWidth,(theImage->GetWidth()-offx));
+	int aHeight = min(texHeight,(theImage->GetHeight()-offy));
 
 	bool rightPad = aWidth<texWidth;
 	bool bottomPad = aHeight<texHeight;
@@ -1736,8 +1736,8 @@ bool D3DInterface::RecoverBits(MemoryImage* theImage)
 
 			int offx = aPieceCol*aData->mTexPieceWidth;
 			int offy = aPieceRow*aData->mTexPieceHeight;
-			int aWidth = std::min(theImage->mWidth-offx, aPiece->mWidth);
-			int aHeight = std::min(theImage->mHeight-offy, aPiece->mHeight);
+			int aWidth = min(theImage->mWidth-offx, aPiece->mWidth);
+			int aHeight = min(theImage->mHeight-offy, aPiece->mHeight);
 
 			switch (aData->mPixelFormat)
 			{
@@ -2186,7 +2186,7 @@ void D3DInterface::DrawTrianglesTexStrip(const TriVertex theVertices[], int theN
 	int aTriNum = 0;
 	while (aTriNum < theNumTriangles)
 	{
-		int aMaxTriangles = std::min(100,theNumTriangles - aTriNum);
+		int aMaxTriangles = min(100,theNumTriangles - aTriNum);
 		for (int i=0; i<aMaxTriangles; i++)
 		{
 			aList[i][0] = theVertices[aTriNum];

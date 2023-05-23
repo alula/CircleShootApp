@@ -6,11 +6,13 @@
 
 using namespace Sexy;
 
+WidgetMover::WidgetMover() {}
+
 WidgetMover::~WidgetMover() {}
 
 void WidgetMover::Update()
 {
-    for (auto anItr = mWidgetMap.begin(); anItr != mWidgetMap.end();)
+	for (WidgetMoverMap::iterator anItr = mWidgetMap.begin(); anItr != mWidgetMap.end();)
     {
         Sexy::Widget *theWidget = anItr->first;
         MoveInfo &moveInfo = anItr->second;
@@ -44,7 +46,7 @@ void WidgetMover::Update()
 
 void WidgetMover::MoveWidget(Sexy::Widget *theWidget, int x, int y, int targetX, int targetY, bool delayDelete)
 {
-    auto entry = mWidgetMap.insert(mWidgetMap.begin(), std::make_pair(theWidget, MoveInfo()));
+    WidgetMoverMap::iterator entry = mWidgetMap.insert(mWidgetMap.begin(), std::make_pair(theWidget, MoveInfo()));
     entry->second.counter = 0;
     entry->second.delayDelete = delayDelete;
     entry->second.y = y;

@@ -311,7 +311,54 @@ void TransitionMgr::DrawLevelFade(Graphics *g)
     g->FillRect(0, 0, 640, 480);
 }
 
-void TransitionMgr::DrawLosing(Graphics *g) {}
+void TransitionMgr::DrawLosing(Graphics *g)
+{
+    static BallDrawer aDrawer;
+
+    mBoard->mSpriteMgr->DrawBackground(g);
+    aDrawer.Reset();
+
+    if (mBoard->mPauseCount == 0 || mBoard->mShowBallsDuringPause)
+    {
+        for (int i = 0; i < mBoard->mNumCurves; i++)
+        {
+            mBoard->mCurveMgr[i]->DrawBalls(aDrawer);
+        }
+    }
+
+    aDrawer.Draw(g, mBoard->mSpriteMgr, mBoard->mParticleMgr);
+    mBoard->DrawBullets(g);
+
+    if (mResetFrame != 0)
+    {
+        if (mResetFrame - mStateCount > 200)
+        {
+            mBoard->mGun->SetAngle(((mStateCount * mStateCount) / 2000.0f) + mCurFrogAngle);
+            mBoard->mGun->Draw(g);
+
+            if (mStateCount > 50)
+            {
+                int anAlpha = (255 * mStateCount - 12750) / 200;
+                if (anAlpha > 0)
+                {
+                    g->SetColorizeImages(true);
+                    g->SetDrawMode(Graphics::DRAWMODE_ADDITIVE);
+                    if (anAlpha > 255)
+                        anAlpha = 255;
+
+                    g->SetColor(Color(255, 255, 255, anAlpha));
+                    mBoard->mGun->Draw(g);
+                    g->SetDrawMode(Graphics::DRAWMODE_NORMAL);
+                    g->SetColorizeImages(false);
+                }
+            }
+        }
+    }
+
+    DrawLevelFade(g);
+    mBoard->mParticleMgr->Draw(g, 4);
+    DrawLetterStamp(g);
+}
 
 void TransitionMgr::DrawTempleComplete(Graphics *g) {}
 
@@ -430,11 +477,15 @@ void TransitionMgr::SyncState(DataSync &theSync)
     if (theSync.mReader)
     {
         theSync.SyncBytes(&mState, 4);
+#ifdef CIRCLE_ENDIAN_SWAP_ENABLED
         mState = (TransitionState)ByteSwap(mState);
+#endif
     }
     else
     {
+#ifdef CIRCLE_ENDIAN_SWAP_ENABLED
         mState = (TransitionState)ByteSwap(mState);
+#endif
         theSync.SyncBytes(&mState, 4);
     }
 
@@ -828,7 +879,122 @@ void TransitionMgr::UpdateStageComplete() {}
 
 void TransitionMgr::UpdateTempleComplete() {}
 
-void TransitionMgr::UpdateLosing() {}
+void TransitionMgr::UpdateLosing()
+{
+    if (mResetFrame != 0)
+    {
+        if (mResetFrame - mStateCount > 200)
+        {
+            if (mStateCount == 30 * (mStateCount / 30))
+            {
+                mBoard->mSoundMgr->AddSound(Sexy::SOUND_TRAIL_LIGHT, 0, 0, mStateCount / 30);
+            }
+        }
+    }
+
+    if (mResetFrame > 0 && mResetFrame - mStateCount == 205)
+    {
+        mBoard->mSoundMgr->AddSound(Sexy::SOUND_POP);
+        if (mBoard->mLives == 0)
+        {
+            mBoard->mSoundMgr->AddSound(Sexy::SOUND_GAME_OVER, 20);
+        }
+        else
+        {
+            mBoard->mSoundMgr->AddSound(Sexy::SOUND_LOST_LIFE, 20);
+        }
+    }
+
+    if (mStateCount > 75)
+    {
+        if (!mResetFrame || mResetFrame - mStateCount > 200)
+        {
+            int v4 = (mStateCount / 60 < 6) ? mStateCount / 60 : 5;
+            for (int i = 0; i < v4; i++)
+            {
+                float anAngle = ((Sexy::Rand() % 360) * SEXY_PI) / 180.0f;
+                float aVel = (Sexy::Rand() % 10 + 1);
+
+                mBoard->mParticleMgr->AddSparkle(
+                    mBoard->mGun->GetCenterX(),
+                    mBoard->mGun->GetCenterY(),
+                    aVel * sinf(anAngle),
+                    aVel * cosf(anAngle),
+                    4,
+                    Sexy::Rand() % 30 + 20,
+                    0,
+                    gBrightBallColors[Sexy::Rand() % 6]);
+            }
+        }
+    }
+
+    if (mResetFrame == 0)
+    {
+        bool v10 = true;
+
+        for (int i = 0; i < mBoard->mNumCurves; i++)
+        {
+            mBoard->mCurveMgr[i]->UpdateLosing();
+            if (!mBoard->mCurveMgr[i]->CanRestart())
+            {
+                v10 = false;
+            }
+        }
+
+        if (!v10)
+            return;
+
+        if (mStateCount <= 150)
+            return;
+
+        mResetFrame = mStateCount + 300;
+
+        std::string aText;
+
+        if (mBoard->mLives > 0)
+        {
+            if (mBoard->mLives == 1)
+            {
+                aText = Sexy::StrFormat("LAST LIFE!"); // why is this a StrFormat?
+            }
+            else
+            {
+                aText = Sexy::StrFormat("%d LIVES LEFT", mBoard->mLives);
+            }
+        }
+        else
+        {
+            aText = "GAME OVER";
+        }
+
+        int len = Sexy::FONT_HUGE->StringWidth(aText);
+        AddLetterStamp(aText, 320 - len / 2, 240, 0xFFFFFF, 110, Sexy::FONT_HUGE_ID, 160);
+        mBoard->mSoundMgr->StopLoop(LoopType_RollOut);
+        mTargetLevelFade = 128;
+        mLevelFadeInc = 2;
+        return;
+    }
+
+    if (mResetFrame == mStateCount)
+    {
+        if (mBoard->mLives <= 0)
+        {
+            mBoard->mApp->DoStatsDialog(true, true);
+        }
+        else
+        {
+            mBoard->Reset(false, true);
+            mTargetLevelFade = 0;
+
+            LevelDesc *aLevelDesc = mBoard->mLevelDesc;
+            IntPoint a3(aLevelDesc->mGunX, aLevelDesc->mGunY);
+            IntPoint a2(-100, -100);
+
+            AddFrogMove(a2, a3, 50, 0);
+            mBoard->mGun->SetPos(-100, -100);
+        }
+    }
+}
 
 void TransitionMgr::UpdateTextBlurb()
 {

@@ -319,7 +319,7 @@ void TextWidget::Draw(Graphics* g)
 	aClipG.SetFont(mFont);		
 	
 	int aFirstLine = (int) mPosition;
-	int aLastLine = std::min((int) mPhysicalLines.size()-1, (int) mPosition + (int) mPageSize + 1);
+	int aLastLine = min((int) mPhysicalLines.size()-1, (int) mPosition + (int) mPageSize + 1);
 	
 	for (int i = aFirstLine; i <= aLastLine; i++)
 	{

@@ -13,7 +13,7 @@
 #include "SpriteMgr.h"
 #include "WayPoint.h"
 
-#include <cmath>
+#include <math.h>
 
 using namespace Sexy;
 
@@ -126,7 +126,8 @@ SexyVector3 WayPointMgr::CalcPerpendicular(float theWayPoint)
     int aWayPoint = theWayPoint;
     if (aWayPoint < 0)
         aWayPoint = 0;
-    else if (aWayPoint >= mWayPoints.size())
+
+    if (aWayPoint >= mWayPoints.size())
         aWayPoint = mWayPoints.size() - 1;
 
     CalcPerpendicularForPoint(aWayPoint);
@@ -138,7 +139,8 @@ float WayPointMgr::GetRotationForPoint(int theWayPoint)
     int aWayPoint = theWayPoint;
     if (aWayPoint < 0)
         aWayPoint = 0;
-    else if (aWayPoint >= mWayPoints.size() - 1)
+
+    if (aWayPoint >= mWayPoints.size() - 1)
         aWayPoint = mWayPoints.size() - 1;
 
     CalcPerpendicularForPoint(aWayPoint);
@@ -173,7 +175,7 @@ void WayPointMgr::CalcPerpendicularForPoint(int theWayPoint)
 
     if (p1->mRotation < 0.0f)
     {
-        p1->mRotation += 2 * M_PI;
+        p1->mRotation += 2 * SEXY_PI;
     }
 
     p1->mHavePerpendicular = true;
@@ -212,16 +214,16 @@ void WayPointMgr::CalcAvgRotationForPoint(int theWayPoint)
         float dr = mWayPoints[i].mRotation - mWayPoints[i - 1].mRotation;
         if (dr > 0.0f)
         {
-            while (dr > M_PI)
+            while (dr > SEXY_PI)
             {
-                dr = dr - 2 * M_PI;
+                dr = dr - 2 * SEXY_PI;
             }
         }
         else if (dr < 0.0)
         {
-            while (dr < -M_PI)
+            while (dr < -SEXY_PI)
             {
-                dr = dr + 2 * M_PI;
+                dr = dr + 2 * SEXY_PI;
             }
         }
 
@@ -239,21 +241,24 @@ void WayPointMgr::CalcAvgRotationForPoint(int theWayPoint)
 
 int WayPointMgr::GetPriority(Ball *theBall)
 {
-    int aPrevPriority = GetPriority(theBall->GetWayPoint() - theBall->GetRadius());
-    int aNextPriority = GetPriority(theBall->GetWayPoint() + theBall->GetRadius());
+    double aRadius = theBall->GetRadius();
+    int aPrevPriority = GetPriority(theBall->GetWayPoint() - aRadius);
+    int aNextPriority = GetPriority(theBall->GetWayPoint() + aRadius);
 
-    if (aNextPriority > aPrevPriority)
-        return aNextPriority;
-    else
-        return aPrevPriority;
+    return max(aPrevPriority, aNextPriority);
 }
 
 int WayPointMgr::GetPriority(int thePoint)
 {
-    if (thePoint < 0 || thePoint >= mWayPoints.size())
+    if (thePoint < 0)
         return 0;
 
-    return mWayPoints[thePoint].mPriority;
+    int numWayPoints = mWayPoints.size();
+
+    if (thePoint >= numWayPoints)
+        return 0;
+    else
+        return mWayPoints[thePoint].mPriority;
 }
 
 int WayPointMgr::GetPriority(Bullet *theBullet)
@@ -396,10 +401,11 @@ void WayPointMgr::DrawTunnel(CurveDrawer &theDrawer) {}
 
 bool WayPointMgr::InTunnel(int theWayPoint)
 {
-    if (theWayPoint < 0 || theWayPoint >= (int)mWayPoints.size())
-    {
+    if (theWayPoint < 0)
+        return true;
+
+    if (theWayPoint >= (int)mWayPoints.size())
         return false;
-    }
 
     return mWayPoints[theWayPoint].mInTunnel;
 }
@@ -409,15 +415,9 @@ bool WayPointMgr::InTunnel(Ball *theBall, bool inFront)
     int aWayPoint = theBall->GetWayPoint();
 
     if (inFront)
-    {
-        aWayPoint += theBall->GetRadius();
-    }
+        return InTunnel(aWayPoint + theBall->GetRadius());
     else
-    {
-        aWayPoint -= theBall->GetRadius();
-    }
-
-    return InTunnel(aWayPoint);
+        return InTunnel(aWayPoint - theBall->GetRadius());
 }
 
 bool WayPointMgr::InTunnel(Bullet *theBullet)

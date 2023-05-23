@@ -12,7 +12,7 @@
 #include "Gun.h"
 #include "Res.h"
 
-#include <cmath>
+#include <math.h>
 
 using namespace Sexy;
 
@@ -180,7 +180,7 @@ bool Gun::StartFire(bool recoil)
     mCenterY = mRecoilY1;
 
     Bullet *aBullet = mBullet;
-    float rad = mAngle - (M_PI / 2);
+    float rad = mAngle - (SEXY_PI / 2);
     float vx = cosf(rad);
     float vy = -sinf(rad);
 

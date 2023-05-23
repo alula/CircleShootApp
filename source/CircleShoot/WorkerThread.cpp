@@ -18,7 +18,7 @@ WorkerThread::WorkerThread()
 	mUnk1 = CreateEventA(0, FALSE, FALSE, NULL);
 	mUnk2 = CreateEventA(0, FALSE, FALSE, NULL);
 
-	_beginthread((_beginthread_proc_type) WorkerThread::StaticThreadProc, 0, this);
+	_beginthread((void(*)(void*)) WorkerThread::StaticThreadProc, 0, this);
 }
 
 WorkerThread::~WorkerThread()

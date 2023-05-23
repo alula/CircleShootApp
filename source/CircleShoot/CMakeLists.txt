@@ -1,6 +1,6 @@
 project(CircleShoot LANGUAGES CXX)
 
-add_executable(Zuma #WIN32
+add_executable(Zuma WIN32
     Ball.cpp
     BlendedImage.cpp
     Board.cpp
@@ -30,6 +30,7 @@ add_executable(Zuma #WIN32
     WayPoint.cpp
     WidgetMover.cpp
     WorkerThread.cpp
+    Zuma.rc
 )
 
 target_include_directories(Zuma PRIVATE

@@ -487,6 +487,17 @@ void SEHCatcher::DoHandleDebugEvent(LPEXCEPTION_POINTERS lpEP)
 	aDebugDump += aWalkString;
 
 	aDebugDump += "\r\n";
+#ifdef _AMD64_
+	sprintf(aBuffer, ("RAX:%016X RBX:%016X RCX:%016X RDX:%016X RSI:%016X RDI:%016X\r\n"),
+		lpEP->ContextRecord->Rax, lpEP->ContextRecord->Rbx, lpEP->ContextRecord->Rcx, lpEP->ContextRecord->Rdx, lpEP->ContextRecord->Rsi, lpEP->ContextRecord->Rdi);
+	aDebugDump += aBuffer;
+	sprintf(aBuffer, "RIP:%016X RSP:%016X  RBP:%016X\r\n", lpEP->ContextRecord->Rip, lpEP->ContextRecord->Rsp, lpEP->ContextRecord->Rbp);
+	aDebugDump += aBuffer;
+	sprintf(aBuffer, "CS:%04X SS:%04X DS:%04X ES:%04X FS:%04X GS:%04X\r\n", lpEP->ContextRecord->SegCs, lpEP->ContextRecord->SegSs, lpEP->ContextRecord->SegDs, lpEP->ContextRecord->SegEs, lpEP->ContextRecord->SegFs, lpEP->ContextRecord->SegGs);
+	aDebugDump += aBuffer;
+	sprintf(aBuffer, "Flags:%08X\r\n", lpEP->ContextRecord->EFlags);
+	aDebugDump += aBuffer;
+#elif defined(_X86_)
 	sprintf(aBuffer, ("EAX:%08X EBX:%08X ECX:%08X EDX:%08X ESI:%08X EDI:%08X\r\n"),
             lpEP->ContextRecord->Eax, lpEP->ContextRecord->Ebx, lpEP->ContextRecord->Ecx, lpEP->ContextRecord->Edx, lpEP->ContextRecord->Esi, lpEP->ContextRecord->Edi);
 	aDebugDump += aBuffer;
@@ -496,7 +507,9 @@ void SEHCatcher::DoHandleDebugEvent(LPEXCEPTION_POINTERS lpEP)
 	aDebugDump += aBuffer;
     sprintf(aBuffer, "Flags:%08X\r\n", lpEP->ContextRecord->EFlags );
 	aDebugDump += aBuffer;
-
+#else
+	aDebugDump += "Register dump isn't supported on this architecture!\r\n";
+#endif
 	aDebugDump += "\r\n";
 	aDebugDump += GetSysInfo();	
 
@@ -558,7 +571,7 @@ std::string SEHCatcher::IntelWalk(PCONTEXT theContext, int theSkipCount)
 {
 	std::string aDebugDump;
 	char aBuffer[2048];
-
+#ifdef _X86_
 	DWORD pc = theContext->Eip;
     PDWORD pFrame, pPrevFrame;
     
@@ -591,6 +604,7 @@ std::string SEHCatcher::IntelWalk(PCONTEXT theContext, int theSkipCount)
         if (IsBadWritePtr(pFrame, sizeof(PVOID)*2))
             break;
     };
+#endif
 
 	return aDebugDump;
 }
@@ -600,6 +614,7 @@ std::string SEHCatcher::ImageHelpWalk(PCONTEXT theContext, int theSkipCount)
 	char aBuffer[2048];
 	std::string aDebugDump;
 
+#ifdef _X86_
 	STACKFRAME sf;
 	memset( &sf, 0, sizeof(sf) );	
 
@@ -671,6 +686,7 @@ std::string SEHCatcher::ImageHelpWalk(PCONTEXT theContext, int theSkipCount)
 
 		aLevelCount++;
 	}
+#endif
 
 	return aDebugDump;
 }
@@ -702,7 +718,7 @@ bool SEHCatcher::GetLogicalAddress(void* addr, char* szModule, DWORD len, DWORD&
     for (unsigned i = 0; i < pNtHdr->FileHeader.NumberOfSections; i++, pSection++)
     {
         DWORD sectionStart = pSection->VirtualAddress;
-        DWORD sectionEnd = sectionStart + std::max(pSection->SizeOfRawData, pSection->Misc.VirtualSize);
+        DWORD sectionEnd = sectionStart + max(pSection->SizeOfRawData, pSection->Misc.VirtualSize);
 
         // Is the address in this section???
         if ((rva >= sectionStart) && (rva <= sectionEnd))
@@ -721,7 +737,7 @@ bool SEHCatcher::GetLogicalAddress(void* addr, char* szModule, DWORD len, DWORD&
 
 std::string SEHCatcher::GetFilename(const std::string& thePath)
 {
-	int aLastSlash = std::max((int) thePath.rfind('\\'), (int) thePath.rfind('/'));	
+	int aLastSlash = max((int) thePath.rfind('\\'), (int) thePath.rfind('/'));	
 
 	if (aLastSlash >= 0)
 	{

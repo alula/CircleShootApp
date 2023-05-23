@@ -15,7 +15,7 @@
 #include "Ball.h"
 #include "Res.h"
 
-#include <cmath>
+#include <math.h>
 
 using namespace Sexy;
 
@@ -481,7 +481,7 @@ void SpriteMgr::UpdateHole(int theCurveNum, float thePercentOpen)
     float v4 = thePercentOpen;
     for (int i = 0; i < 3; i++)
     {
-        thePercentOpen = fmaxf(aHole.mPercentOpen[i], thePercentOpen);
+        thePercentOpen = max(aHole.mPercentOpen[i], thePercentOpen);
     }
 
     aHole.mFrame = (int)(Sexy::IMAGE_HOLE_COVER->mNumRows * thePercentOpen);
@@ -500,24 +500,24 @@ void SpriteMgr::PlaceHole(int theCurveNum, int theX, int theY, float theRotation
     int aCornerY = theY - Sexy::IMAGE_HOLE->mHeight / 2;
 
     while (theRotation < 0.0)
-        theRotation += M_PI * 2;
+        theRotation += SEXY_PI * 2;
 
-    while (theRotation > M_PI * 2)
-        theRotation -= M_PI * 2;
+    while (theRotation > SEXY_PI * 2)
+        theRotation -= SEXY_PI * 2;
 
     if (fabs(theRotation) < 0.2)
         theRotation = 0.0;
 
-    if (fabs(theRotation - M_PI / 2) < 0.2)
-        theRotation = M_PI / 2;
+    if (fabs(theRotation - SEXY_PI / 2) < 0.2)
+        theRotation = SEXY_PI / 2;
 
-    if (fabs(theRotation - M_PI) < 0.2)
-        theRotation = M_PI;
+    if (fabs(theRotation - SEXY_PI) < 0.2)
+        theRotation = SEXY_PI;
 
-    if (fabs(theRotation - M_PI * 1.5) < 0.2)
-        theRotation = M_PI * 1.5;
+    if (fabs(theRotation - SEXY_PI * 1.5) < 0.2)
+        theRotation = SEXY_PI * 1.5;
 
-    if (fabs(theRotation - M_PI * 2) < 0.2)
+    if (fabs(theRotation - SEXY_PI * 2) < 0.2)
         theRotation = 0.0;
 
     int i;

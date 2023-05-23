@@ -16,9 +16,9 @@ namespace Sexy
 	class WorkerThread
 	{
 	public:
-		HANDLE mUnk1 = NULL;
-		HANDLE mUnk2 = NULL;
-		void (*mTaskProc)(void *) = NULL;
+		HANDLE mUnk1;
+		HANDLE mUnk2;
+		void (*mTaskProc)(void *);
 		void *mParam;
 		bool mShutdown;
 

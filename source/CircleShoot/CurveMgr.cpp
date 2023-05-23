@@ -19,7 +19,7 @@
 #include "SoundMgr.h"
 #include "Res.h"
 
-#include <cmath>
+#include <math.h>
 
 using namespace Sexy;
 
@@ -98,7 +98,7 @@ void CurveMgr::SetupLevel(LevelDesc *theDesc, SpriteMgr *theSpriteMgr, int theCu
     float aSkullRotation = mCurveDesc->mSkullRotation;
     if (aSkullRotation >= 0.0f)
     {
-        aSkullRotation = aSkullRotation * M_PI / 180.0f;
+        aSkullRotation = aSkullRotation * SEXY_PI / 180.0f;
     }
 
     int aHoleX = 0;
@@ -457,8 +457,8 @@ bool CurveMgr::CheckGapShot(Bullet *theBullet)
     if (aBallIdx > 0 && aNumWayPoints > aBallIdx)
     {
         const WayPoint *aWayPoint = &mWayPointMgr->GetWayPointList()[aBallIdx];
-        if (aBulDiameterSq > (aWayPoint->x - aBulX) * (aWayPoint->x - aBulX) +
-                                 (aWayPoint->y - aBulY) * (aWayPoint->y - aBulY))
+        if (aBulDiameterSq > ((aWayPoint->x - aBulX) * (aWayPoint->x - aBulX) +
+                                 (aWayPoint->y - aBulY) * (aWayPoint->y - aBulY)))
         {
             return false;
         }
@@ -468,7 +468,7 @@ bool CurveMgr::CheckGapShot(Bullet *theBullet)
 
     for (int i = 1; i < aNumWayPoints; i += aBulDiameter)
     {
-        const WayPoint *aWayPoint = &mWayPointMgr->GetWayPointList()[aBallIdx];
+        const WayPoint *aWayPoint = &mWayPointMgr->GetWayPointList()[i];
         if (!aWayPoint->mInTunnel && (aBulDiameterSq > (aWayPoint->x - aBulX) * (aWayPoint->x - aBulX) +
                                                            (aWayPoint->y - aBulY) * (aWayPoint->y - aBulY)))
         {
@@ -486,7 +486,7 @@ bool CurveMgr::CheckGapShot(Bullet *theBullet)
                         return false;
                     }
 
-                    float aBallDist = aPrevBall->GetWayPoint() - aBall->GetWayPoint();
+                    float aBallDist = aBall->GetWayPoint() - aPrevBall->GetWayPoint();
                     if (aBallDist > 0)
                     {
                         return theBullet->AddGapInfo(mCurveNum, aBallDist, aBall->GetId());
@@ -1082,33 +1082,34 @@ bool CurveMgr::CheckSet(Ball *theBall)
 
     if (!mHadPowerUp)
     {
-        int &destroySound = Sexy::SOUND_BALLDESTROYED1;
+        int *destroySound = &Sexy::SOUND_BALLDESTROYED1;
+
         switch (aComboCount)
         {
         case 0:
-            destroySound = Sexy::SOUND_BALLDESTROYED1;
+            destroySound = &Sexy::SOUND_BALLDESTROYED1;
             break;
         case 1:
-            destroySound = Sexy::SOUND_BALLDESTROYED2;
+            destroySound = &Sexy::SOUND_BALLDESTROYED2;
             break;
         case 2:
-            destroySound = Sexy::SOUND_BALLDESTROYED3;
+            destroySound = &Sexy::SOUND_BALLDESTROYED3;
             break;
         case 3:
-            destroySound = Sexy::SOUND_BALLDESTROYED4;
+            destroySound = &Sexy::SOUND_BALLDESTROYED4;
             break;
         default:
-            destroySound = Sexy::SOUND_BALLDESTROYED5;
+            destroySound = &Sexy::SOUND_BALLDESTROYED5;
             break;
         }
 
-        mApp->PlaySample(destroySound);
+        mApp->PlaySample(*destroySound);
 
         SoundInstance *aSound = mApp->mSoundManager->GetSoundInstance(Sexy::SOUND_COMBO);
         if (aSound != NULL)
         {
             aSound->AdjustPitch(2 * aComboCount);
-            aSound->SetVolume(fmin(1.0, aComboCount * 0.2 + 0.4));
+            aSound->SetVolume(min(1.0, aComboCount * 0.2 + 0.4));
             aSound->Play(false, true);
         }
     }
@@ -1185,7 +1186,7 @@ void CurveMgr::DoScoring(Ball *theBall, int theNumBalls, int theComboCount, int 
 
     if (inARow)
     {
-        aFloat.AddText(Sexy::StrFormat("CHAIN BONUS x%d", aRowBonus), Sexy::FONT_FLOAT_ID, theColor);
+        aFloat.AddText(Sexy::StrFormat("CHAIN BONUS x%d", mBoard->mNumClearsInARow), Sexy::FONT_FLOAT_ID, theColor);
         mBoard->mSoundMgr->AddSound(Sexy::SOUND_CHAIN_BONUS, 0, 0, mBoard->mNumClearsInARow - 5);
     }
 
@@ -1892,7 +1893,7 @@ void CurveMgr::StartClearCount(Ball *theBall)
 
     theBall->StartClearCount(mWayPointMgr->InTunnel(theBall->GetWayPoint()));
 
-    if (theBall->GetPowerType() != PowerType_None)
+    if (theBall->GetPowerTypeWussy() != PowerType_None)
     {
         mBoard->ActivatePower(theBall);
         mHadPowerUp = true;
@@ -1919,7 +1920,7 @@ void CurveMgr::ActivateBomb(Ball *theBall)
                 aColor,
                 a6);
             v21 += ((float)v19 / (float)i);
-        } while (v21 < M_PI * 2);
+        } while (v21 < SEXY_PI * 2);
     }
 
     mBoard->mParticleMgr->AddExplosion(

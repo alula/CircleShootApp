@@ -1557,7 +1557,7 @@ Image* ImageLib::GetImage(const std::string& theFilename, bool lookForAlphaImage
 		lookForAlphaImage = false;
 
 	int aLastDotPos = theFilename.rfind('.');
-	int aLastSlashPos = std::max((int)theFilename.rfind('\\'), (int)theFilename.rfind('/'));
+	int aLastSlashPos = max((int)theFilename.rfind('\\'), (int)theFilename.rfind('/'));
 
 	std::string anExt;
 	std::string aFilename;

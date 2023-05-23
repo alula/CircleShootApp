@@ -458,7 +458,11 @@ SexyAppBase::~SexyAppBase()
 	{
 		HWND aWindow = mInvisHWnd;
 		mInvisHWnd = NULL;
+#ifdef _X86_
 		SetWindowLong(aWindow, GWL_USERDATA, NULL);
+#else
+		SetWindowLongPtr(aWindow, GWLP_USERDATA, NULL);
+#endif
 		DestroyWindow(aWindow);
 	}	
 	
@@ -471,9 +475,9 @@ SexyAppBase::~SexyAppBase()
 	while (aSharedImageItr != mSharedImageMap.end())
 	{
 		SharedImage* aSharedImage = &aSharedImageItr->second;
-		DBG_ASSERTE(aSharedImage->mRefCount == 0);		
+		//DBG_ASSERTE(aSharedImage->mRefCount == 0);		
 		delete aSharedImage->mImage;
-		mSharedImageMap.erase(aSharedImageItr++);		
+		mSharedImageMap.erase(aSharedImageItr++);
 	}
 	
 	delete mDDInterface;
@@ -484,8 +488,11 @@ SexyAppBase::~SexyAppBase()
 	{
 		HWND aWindow = mHWnd;
 		mHWnd = NULL;
-		
+#ifdef _X86_
 		SetWindowLong(aWindow, GWL_USERDATA, NULL);
+#else
+		SetWindowLongPtr(aWindow, GWLP_USERDATA, NULL);
+#endif
 
 		/*char aStr[256];
 		sprintf(aStr, "HWND: %d\r\n", aWindow);
@@ -1433,7 +1440,7 @@ void SexyAppBase::DumpProgramInfo()
 		aDumpStream << "<TD>" << SexyStringToString(((aNativeAlphaMemory != 0) ? _S("NativeAlpha<BR>") + CommaSeperate(aNativeAlphaMemory) : _S("&nbsp;"))) << "</TD>" << std::endl;
 		aDumpStream << "<TD>" << SexyStringToString(((aRLAlphaMemory != 0) ? _S("RLAlpha<BR>") + CommaSeperate(aRLAlphaMemory) : _S("&nbsp;"))) << "</TD>" << std::endl;
 		aDumpStream << "<TD>" << SexyStringToString(((aRLAdditiveMemory != 0) ? _S("RLAdditive<BR>") + CommaSeperate(aRLAdditiveMemory) : _S("&nbsp;"))) << "</TD>" << std::endl;
-		aDumpStream << "<TD>" << (aMemoryImage->mFilePath.empty()? "&nbsp;":aMemoryImage->mFilePath) << "</TD>" << std::endl;
+		// aDumpStream << "<TD>" << (aMemoryImage->mFilePath.empty()? "&nbsp;":aMemoryImage->mFilePath) << "</TD>" << std::endl;
 
 		aDumpStream << "</TR>" << std::endl;
 		
@@ -1498,7 +1505,7 @@ double SexyAppBase::GetLoadingThreadProgress()
 		return 0.0;
 	if (mNumLoadingThreadTasks == 0)
 		return 0.0;
-	return std::min(mCompletedLoadingThreadTasks / (double) mNumLoadingThreadTasks, 1.0);
+	return min(mCompletedLoadingThreadTasks / (double) mNumLoadingThreadTasks, 1.0);
 }
 
 bool SexyAppBase::RegistryWrite(const std::string& theValueName, ulong theType, const uchar* theValue, ulong theLength)
@@ -2668,8 +2675,8 @@ bool SexyAppBase::DrawDirtyStuff()
 			ulong aTickNow = GetTickCount();
 
 			OutputDebugString(StrFormat(_S("Theoretical FPS: %d\r\n"), (int) (mFPSCount * 1000 / mFPSTime)).c_str());
-			OutputDebugString(StrFormat(_S("Actual      FPS: %d\r\n"), (mFPSFlipCount * 1000) / std::max((aTickNow - mFPSStartTick), 1)).c_str());
-			OutputDebugString(StrFormat(_S("Dirty Rate     : %d\r\n"), (mFPSDirtyCount * 1000) / std::max((aTickNow - mFPSStartTick), 1)).c_str());
+			OutputDebugString(StrFormat(_S("Actual      FPS: %d\r\n"), (mFPSFlipCount * 1000) / max((aTickNow - mFPSStartTick), 1)).c_str());
+			OutputDebugString(StrFormat(_S("Dirty Rate     : %d\r\n"), (mFPSDirtyCount * 1000) / max((aTickNow - mFPSStartTick), 1)).c_str());
 
 			mFPSTime = 0;
 			mFPSCount = 0;
@@ -2683,7 +2690,7 @@ bool SexyAppBase::DrawDirtyStuff()
 		{
 			int aTotalTime = aEndTime - aStartTime;
 
-			mNextDrawTick += 35 + std::max(aTotalTime, 15);
+			mNextDrawTick += 35 + max(aTotalTime, 15);
 
 			if ((int) (aEndTime - mNextDrawTick) >= 0)			
 				mNextDrawTick = aEndTime;			
@@ -2888,7 +2895,7 @@ static INT_PTR CALLBACK MarkerListDialogProc(HWND hwnd, UINT msg, WPARAM wParam,
 
 				SexyString aStr = StrFormat(_S("%s (%02d:%02d:%02d)"), anItr->first.c_str(),anHours,aMinutes,aSeconds);				
 				GetTextExtentPoint32(hDCListBox, aStr.c_str(), aStr.length(), &aSize);
-				dwExtent = std::max((int) (aSize.cx + tm.tmAveCharWidth), (int)dwExtent);
+				dwExtent = max((int) (aSize.cx + tm.tmAveCharWidth), (int)dwExtent);
 				SendMessage(aListBox, LB_SETHORIZONTALEXTENT, dwExtent, 0);
 				LRESULT anIndex = SendMessage(aListBox, LB_ADDSTRING, 0, (LPARAM)aStr.c_str());
 				SendMessage(aListBox, LB_SETITEMDATA, anIndex, anItr->second);
@@ -3390,8 +3397,12 @@ LRESULT CALLBACK SexyAppBase::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
 		if (ScreenSaverWindowProc(hWnd,uMsg,wParam,lParam,aResult))
 			return aResult;
 	}
-
+#ifdef _X86_
 	SexyAppBase* aSexyApp = (SexyAppBase*) GetWindowLong(hWnd, GWL_USERDATA);	
+#else
+	SexyAppBase* aSexyApp = (SexyAppBase*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+#endif
+
 	switch (uMsg)
 	{		
 //  TODO: switch to killfocus/setfocus?
@@ -4639,7 +4650,12 @@ void SexyAppBase::MakeWindow()
 
 	if (mHWnd != NULL)
 	{
+#ifdef _X86_
 		SetWindowLong(mHWnd, GWL_USERDATA, 0);
+#else
+		SetWindowLongPtr(mHWnd, GWLP_USERDATA, 0);
+#endif
+
 		HWND anOldWindow = mHWnd;
 		mHWnd = NULL;		
 		DestroyWindow(anOldWindow);	
@@ -4775,8 +4791,11 @@ void SexyAppBase::MakeWindow()
 	/*char aStr[256];
 	sprintf(aStr, "HWND: %d\r\n", mHWnd);
 	OutputDebugString(aStr);*/
-
-	SetWindowLong(mHWnd, GWL_USERDATA, (LONG) this);	
+#ifdef _X86_
+	SetWindowLong(mHWnd, GWL_USERDATA, (LONG) this);
+#else
+	SetWindowLongPtr(mHWnd, GWLP_USERDATA, (uintptr_t)this);
+#endif
 
 	if (mDDInterface == NULL)
 	{
@@ -5202,10 +5221,10 @@ void SexyAppBase::UpdateFTimeAcc()
 	{				
 		int aDeltaTime = aCurTime - mLastTimeCheck;		
 
-		mUpdateFTimeAcc = std::min(mUpdateFTimeAcc + aDeltaTime, 200.0);
+		mUpdateFTimeAcc = min(mUpdateFTimeAcc + aDeltaTime, 200.0);
 
 		if (mRelaxUpdateBacklogCount > 0)				
-			mRelaxUpdateBacklogCount = std::max(mRelaxUpdateBacklogCount - aDeltaTime, 0);				
+			mRelaxUpdateBacklogCount = max(mRelaxUpdateBacklogCount - aDeltaTime, 0);				
 	}
 
 	mLastTimeCheck = aCurTime;
@@ -5422,7 +5441,7 @@ bool SexyAppBase::Process(bool allowSleep)
 			//  too much to keep our timing tending toward occuring right after 
 			//  redraws
 			if (isVSynched)
-				mUpdateFTimeAcc = std::max(mUpdateFTimeAcc - aFrameFTime - 0.2f, 0.0);
+				mUpdateFTimeAcc = max(mUpdateFTimeAcc - aFrameFTime - 0.2f, 0.0);
 			else
 				mUpdateFTimeAcc -= aFrameFTime;
 
@@ -5467,7 +5486,7 @@ bool SexyAppBase::Process(bool allowSleep)
 
 			ulong anEndTime = timeGetTime();
 			int anElapsedTime = (anEndTime - aStartTime) - aCumSleepTime;
-			int aLoadingYieldSleepTime = std::min(250, (anElapsedTime * 2) - aCumSleepTime);
+			int aLoadingYieldSleepTime = min(250, (anElapsedTime * 2) - aCumSleepTime);
 
 			if (aLoadingYieldSleepTime >= 0)
 			{
@@ -6215,7 +6234,12 @@ void SexyAppBase::Init()
 				NULL,
 				gHInstance,
 				0);	
-		SetWindowLong(mInvisHWnd, GWL_USERDATA, (LONG) this);
+
+#ifdef _X86_
+		SetWindowLong(mInvisHWnd, GWL_USERDATA, (LONG)this);
+#else
+		SetWindowLongPtr(mInvisHWnd, GWLP_USERDATA, (uintptr_t)this);
+#endif
 	}
 	else
 	{
@@ -6261,7 +6285,12 @@ void SexyAppBase::Init()
 				NULL,
 				gHInstance,
 				0);	
-		SetWindowLong(mInvisHWnd, GWL_USERDATA, (LONG) this);
+
+#ifdef _X86_
+		SetWindowLong(mInvisHWnd, GWL_USERDATA, (LONG)this);
+#else
+		SetWindowLongPtr(mInvisHWnd, GWLP_USERDATA, (uintptr_t)this);
+#endif
 	}
 		
 	mHandCursor = CreateCursor(gHInstance, 11, 4, 32, 32, gFingerCursorData, gFingerCursorData+sizeof(gFingerCursorData)/2); 
@@ -6450,9 +6479,9 @@ Sexy::DDImage* SexyAppBase::GetImage(const std::string& theFileName, bool commit
 		return NULL;	
 
 	DDImage* anImage = new DDImage(mDDInterface);
-	anImage->mFilePath = theFileName;
+	// anImage->mFilePath = theFileName;
 	anImage->SetBits(aLoadedImage->GetBits(), aLoadedImage->GetWidth(), aLoadedImage->GetHeight(), commitBits);	
-	anImage->mFilePath = theFileName;
+	// anImage->mFilePath = theFileName;
 	delete aLoadedImage;
 	
 	return anImage;
@@ -6745,8 +6774,8 @@ void SexyAppBase::RotateImageHue(Sexy::MemoryImage *theImage, int theDelta)
 		int g = (aPixel>>8) &0xff;
 		int b = aPixel&0xff;
 
-		int maxval = std::max(r, std::max(g, b));
-		int minval = std::min(r, std::min(g, b));
+		int maxval = max(r, max(g, b));
+		int minval = min(r, min(g, b));
 		int h = 0;
 		int s = 0;
 		int l = (minval+maxval)/2;
@@ -6838,8 +6867,8 @@ ulong SexyAppBase::HSLToRGB(int h, int s, int l)
 
 ulong SexyAppBase::RGBToHSL(int r, int g, int b)
 {					
-	int maxval = std::max(r, std::max(g, b));
-	int minval = std::min(r, std::min(g, b));
+	int maxval = max(r, max(g, b));
+	int minval = min(r, min(g, b));
 	int hue = 0;
 	int saturation = 0;
 	int luminosity = (minval+maxval)/2;

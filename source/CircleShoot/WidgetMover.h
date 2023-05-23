@@ -15,6 +15,7 @@ namespace Sexy
     class WidgetMover
     {
     public:
+		WidgetMover();
         virtual ~WidgetMover();
 
         void Update();
@@ -35,8 +36,10 @@ namespace Sexy
 
             MoveInfo() : x(0), y(0), targetX(0), targetY(0) {}
         };
+		
+		typedef std::map<Sexy::Widget *, MoveInfo> WidgetMoverMap;
 
-        std::map<Sexy::Widget *, MoveInfo> mWidgetMap;
+        WidgetMoverMap mWidgetMap;
     };
 };
 

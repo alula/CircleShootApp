@@ -24,27 +24,27 @@ using namespace Sexy;
 MTRand Sexy::gThreadRand;
 MTRand Sexy::gAppRand;
 
-const char *Sexy::gSmallGauntletStages[] = {
-    "RAB",
-    "EAG",
-    "JAG",
-    "SG",
-};
+int Sexy::gButtonSequenceCount = 0;
+int Sexy::gLastButtonOver = 4;
+int Sexy::gBallColors[6] = {0x1980FF, 0xFFFF00, 0xFF0000, 0x00FF00, 0xFF00FF, 0xFFFFFF};
+int Sexy::gBrightBallColors[6] = {0x80FFFF, 0xFFFF40, 0xFFAAAA, 0x80FF80, 0xFF80FF, 0xFFFFFF};
+int Sexy::gDarkBallColors[6] = {0x231679, 0x60510A, 0xA00F14, 0x204422, 0x561643, 0x381B22};
+int Sexy::gTextBallColors[6] = {0x2D8BFF, 0xFFFF00, 0xFF0000, 0xFF00, 0xFF00FF, 0xFFFFFF};
 const char *Sexy::gGauntletStages[] = {
     "RABBIT",
     "EAGLE",
     "JAGUAR",
     "SUNGOD",
 };
-int Sexy::gTextBallColors[6] = {0x2D8BFF, 0xFFFF00, 0xFF0000, 0xFF00, 0xFF00FF, 0xFFFFFF};
-int Sexy::gDarkBallColors[6] = {0x231679, 0x60510A, 0xA00F14, 0x204422, 0x561643, 0x381B22};
-int Sexy::gBrightBallColors[6] = {0x80FFFF, 0xFFFF40, 0xFFAAAA, 0x80FF80, 0xFF80FF, 0xFFFFFF};
-int Sexy::gBallColors[6] = {0x1980FF, 0xFFFF00, 0xFF0000, 0x00FF00, 0xFF00FF, 0xFFFFFF};
+const char *Sexy::gSmallGauntletStages[] = {
+    "RAB",
+    "EAG",
+    "JAG",
+    "SG",
+};
+int Sexy::gSaveGameVersion = 5;
 
 int Sexy::gMainThreadId = 0;
-
-int Sexy::gButtonSequenceCount = 0;
-int Sexy::gLastButtonOver = 4;
 
 std::string Sexy::GetTimeString(int aTime)
 {
@@ -58,7 +58,8 @@ std::string Sexy::GetTimeString(int aTime)
     }
 }
 
-int Sexy::AppGetTickCount() {
+int Sexy::AppGetTickCount()
+{
     return 10 * gSexyAppBase->mUpdateCount;
 }
 
@@ -312,9 +313,9 @@ void Sexy::SetupDialog(Dialog *theDialog, int theMinWidth)
 
 MemoryImage *Sexy::CutoutImageFromAlpha(MemoryImage *theBackgroundImage, MemoryImage *theAlpha, int x, int y)
 {
-    Sexy::TRect<int> a1{x, y, theAlpha->GetWidth(), theAlpha->GetHeight()};
-    Sexy::TRect<int> a2{0, 0, theBackgroundImage->GetWidth(), theBackgroundImage->GetHeight()};
-    Sexy::TRect<int> a3 = a1.Intersection(a2);
+    Rect a1 = Rect(x, y, theAlpha->GetWidth(), theAlpha->GetHeight());
+    Rect a2 = Rect(0, 0, theBackgroundImage->GetWidth(), theBackgroundImage->GetHeight());
+    Rect a3 = a1.Intersection(a2);
 
     if (a1.mWidth <= 0 || a1.mHeight <= 0)
     {
@@ -453,10 +454,12 @@ void Sexy::FillCircle(Graphics *g, int x, int y, int theRadius)
     anImage->FillScanLines(aSpans, spanCount, aColor, aDrawMode);
 }
 
+#ifdef CIRCLE_ENDIAN_SWAP_ENABLED
 unsigned int ByteSwap(unsigned int theValue)
 {
     return (((theValue >> 24) & 0xFF) | ((theValue >> 8) & 0xFF00) | ((theValue << 8) & 0xFF0000) | ((theValue << 24) & 0xFF000000));
 }
+#endif
 
 int Sexy::BoardGetTickCount()
 {

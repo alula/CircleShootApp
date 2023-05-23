@@ -334,7 +334,7 @@ int DDInterface::Init(HWND theWindow, bool IsWindowed)
 			rc.right = rc.left + mDisplayWidth;
 			rc.bottom = rc.top + mDisplayHeight;
 			::AdjustWindowRectEx(&rc, info.dwStyle, false, info.dwExStyle);
-			::MoveWindow(theWindow, std::max((LONG) 0, rc.left), std::max((LONG) 0, rc.top), rc.right-rc.left, rc.bottom-rc.top, false);
+			::MoveWindow(theWindow, max((LONG) 0, rc.left), max((LONG) 0, rc.top), rc.right-rc.left, rc.bottom-rc.top, false);
 
 			if ( mApp->mWidescreenAware )
 			{
@@ -607,11 +607,11 @@ int DDInterface::Init(HWND theWindow, bool IsWindowed)
 		mBlueAddTable = new int[aMaxB*2+1];
 
 		for (i = 0; i < aMaxR*2+1; i++)
-			mRedAddTable[i] = std::min(i, aMaxR);
+			mRedAddTable[i] = min(i, aMaxR);
 		for (i = 0; i < aMaxG*2+1; i++)
-			mGreenAddTable[i] = std::min(i, aMaxG);
+			mGreenAddTable[i] = min(i, aMaxG);
 		for (i = 0; i < aMaxB*2+1; i++)
-			mBlueAddTable[i] = std::min(i, aMaxB);
+			mBlueAddTable[i] = min(i, aMaxB);
 
 		// Create the tables that we will use to convert from 
 		// internal color representation to surface representation

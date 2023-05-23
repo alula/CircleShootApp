@@ -51,8 +51,8 @@ class Image
 	friend class			Sexy::SysFont;
 
 public:
-	bool					mDrawn;
-	std::string				mFilePath;
+	// bool					mDrawn;
+	// std::string				mFilePath;
 	int						mWidth;
 	int						mHeight;
 

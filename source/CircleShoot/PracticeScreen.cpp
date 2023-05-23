@@ -18,7 +18,7 @@
 #include "PracticeScreen.h"
 #include "Res.h"
 
-#include <cmath>
+#include <math.h>
 
 using namespace Sexy;
 
@@ -50,18 +50,19 @@ PracticeScreen::PracticeScreen()
 	mLastClickCnt = 0;
 
 	IntPoint aDoors[12] = {
-		{209, 179},
-		{232, 129},
-		{249, 82},
-		{265, 28},
-		{0, 0},
-		{0, 0},
-		{0, 0},
-		{0, 0},
-		{0, 0},
-		{0, 0},
-		{0, 0},
+		IntPoint(209, 179),
+		IntPoint(232, 129),
+		IntPoint(249, 82),
+		IntPoint(265, 28),
+		IntPoint(0, 0),
+		IntPoint(0, 0),
+		IntPoint(0, 0),
+		IntPoint(0, 0),
+		IntPoint(0, 0),
+		IntPoint(0, 0),
+		IntPoint(0, 0)
 	};
+
 	for (int i = 0; i < 4; i++)
 	{
 		mDoors[i].mImage = (MemoryImage *)Sexy::GetImageById((ResourceId)(i + Sexy::IMAGE_GAUNTDOOR1_ID));
@@ -255,7 +256,7 @@ void PracticeScreen::Draw(Graphics *g)
 
 		if (gSexyAppBase->Is3DAccelerated())
 		{
-			float aRotation = (mUpdateCnt * M_PI / 180.0f) * 0.3f;
+			float aRotation = (mUpdateCnt * SEXY_PI / 180.0f) * 0.3f;
 			g->DrawImageRotated(Sexy::IMAGE_SUNGLOW, aPosX, aPosY, aRotation);
 		}
 		else

@@ -77,7 +77,7 @@ void ResourceManager::DeleteMap(ResMap &theMap)
 {
 	for (ResMap::iterator anItr = theMap.begin(); anItr != theMap.end(); ++anItr)
 	{
-		anItr->second->DeleteResource();
+		//anItr->second->DeleteResource();
 		delete anItr->second;
 	}
 
@@ -350,7 +350,7 @@ bool ResourceManager::ParseImageResource(XMLElement &theElement)
 	aRes->mAnimInfo.mAnimType = anAnimType;
 	if (anAnimType != AnimType_None)
 	{
-		int aNumCels = std::max(aRes->mRows,aRes->mCols);
+		int aNumCels = max(aRes->mRows,aRes->mCols);
 		int aBeginDelay = 0, anEndDelay = 0;
 
 		anItr = theElement.mAttributes.find(_S("framedelay"));
@@ -632,7 +632,7 @@ bool ResourceManager::LoadAlphaGridImage(ImageRes *theRes, DDImage *theImage)
 	if (anAlphaImage==NULL)
 		return Fail(StrFormat("Failed to load image: %s",theRes->mAlphaGridImage.c_str()));
 
-	std::unique_ptr<ImageLib::Image> aDelAlphaImage(anAlphaImage);
+	//std::unique_ptr<ImageLib::Image> aDelAlphaImage(anAlphaImage);
 
 	int aNumRows = theRes->mRows;
 	int aNumCols = theRes->mCols;
@@ -641,8 +641,10 @@ bool ResourceManager::LoadAlphaGridImage(ImageRes *theRes, DDImage *theImage)
 	int aCelHeight = theImage->mHeight/aNumRows;
 
 
-	if (anAlphaImage->mWidth!=aCelWidth || anAlphaImage->mHeight!=aCelHeight)
-		return Fail(StrFormat("GridAlphaImage size mismatch between %s and %s",theRes->mPath.c_str(),theRes->mAlphaGridImage.c_str()));
+	if (anAlphaImage->mWidth != aCelWidth || anAlphaImage->mHeight != aCelHeight) {
+		delete anAlphaImage;
+		return Fail(StrFormat("GridAlphaImage size mismatch between %s and %s", theRes->mPath.c_str(), theRes->mAlphaGridImage.c_str()));
+	}
 
 	unsigned long *aMasterRowPtr = theImage->mBits;
 	for (int i=0; i < aNumRows; i++)
@@ -670,6 +672,7 @@ bool ResourceManager::LoadAlphaGridImage(ImageRes *theRes, DDImage *theImage)
 	}
 
 	theImage->BitsChanged();
+	delete anAlphaImage;
 	return true;
 }
 

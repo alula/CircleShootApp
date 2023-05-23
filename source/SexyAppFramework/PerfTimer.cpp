@@ -4,35 +4,42 @@
 #if defined(__i386__) || defined(_M_I386) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_AMD64)
 
 #ifdef _MSC_VER
+#if _MSC_VER >= 1400
 #include <intrin.h>
+#else
+
+#endif
 #else
 #include <x86intrin.h>
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-inline int QueryCounters(__int64 *lpPerformanceCount)
+inline int QueryCounters(int64 *lpPerformanceCount)
 {
 	
 	/* returns TSC only */
-	/*_asm
+#if _MSC_VER < 1400
+	_asm
 	{
 		mov ebx, dword ptr [lpPerformanceCount]
 		rdtsc
 		mov dword ptr [ebx], eax
 		mov dword ptr [ebx+4], edx
-	}*/
-
+	}
+#else
 	*lpPerformanceCount = __rdtsc();
+#endif
 
 	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-inline int DeltaCounters(__int64 *lpPerformanceCount)
+inline int DeltaCounters(int64 *lpPerformanceCount)
 {
-	/*_asm
+#if _MSC_VER < 1400
+	_asm
 	{
 		mov ebx, dword ptr [lpPerformanceCount]
 		rdtsc
@@ -40,10 +47,11 @@ inline int DeltaCounters(__int64 *lpPerformanceCount)
 		sbb edx, dword ptr [ebx+4]
 		mov dword ptr [ebx],   eax
 		mov dword ptr [ebx+4], edx
-	}*/
-
-	__int64 oldCount = *lpPerformanceCount;
+	}
+#else
+	int64 oldCount = *lpPerformanceCount;
 	*lpPerformanceCount = __rdtsc() - oldCount;
+#endif
 
 	return 1;
 }
@@ -58,12 +66,12 @@ using namespace Sexy;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-static __int64 CalcCPUSpeed()
+static int64 CalcCPUSpeed()
 {
 	int aPriority = GetThreadPriority(GetCurrentThread());
 	SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_HIGHEST);
 	LARGE_INTEGER	goal, current, period;
-	__int64 Ticks;
+	int64 Ticks;
 
 	if( !QueryPerformanceFrequency( &period ) ) return 0;
 
@@ -81,7 +89,7 @@ static __int64 CalcCPUSpeed()
 
 }
 
-static __int64 gCPUSpeed = 0;
+static int64 gCPUSpeed = 0;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -133,7 +141,7 @@ double PerfTimer::GetDuration()
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-__int64 PerfTimer::GetCPUSpeed()
+int64 PerfTimer::GetCPUSpeed()
 {
 	if(gCPUSpeed<=0)
 	{
@@ -157,8 +165,8 @@ int PerfTimer::GetCPUSpeedMHz()
 struct PerfInfo
 {
 	const char *mPerfName;
-	mutable __int64 mStartTime;
-	mutable __int64 mDuration;
+	mutable int64 mStartTime;
+	mutable int64 mDuration;
 	mutable double mMillisecondDuration;
 	mutable double mLongestCall;
 	mutable int mStartCount;
@@ -174,8 +182,8 @@ struct PerfInfo
 typedef std::set<PerfInfo> PerfInfoSet;
 static PerfInfoSet gPerfInfoSet;
 static bool gPerfOn = false;
-static __int64 gStartTime;
-static __int64 gCollateTime;
+static int64 gStartTime;
+static int64 gCollateTime;
 double gDuration = 0;
 int gStartCount = 0;
 int gPerfRecordTop = 0;
@@ -185,7 +193,7 @@ int gPerfRecordTop = 0;
 struct PerfRecord
 {
 	const char *mName;
-	__int64 mTime;
+	int64 mTime;
 	bool mStart;
 
 	PerfRecord() { }
@@ -213,7 +221,7 @@ static inline void InsertPerfRecord(PerfRecord &theRecord)
 		{
 			if( --anItr->mStartCount == 0)
 			{
-				__int64 aDuration = theRecord.mTime - anItr->mStartTime;
+				int64 aDuration = theRecord.mTime - anItr->mStartTime;
 				anItr->mDuration += aDuration;
 
 				if (aDuration > anItr->mLongestCall)
@@ -228,7 +236,7 @@ static inline void InsertPerfRecord(PerfRecord &theRecord)
 ///////////////////////////////////////////////////////////////////////////////
 static inline void CollatePerfRecords()
 {
-	__int64 aTime1,aTime2;
+	int64 aTime1,aTime2;
 	QueryCounters(&aTime1);
 
 	for(int i=0; i<gPerfRecordTop; i++)
@@ -278,14 +286,14 @@ void SexyPerf::BeginPerf(bool measurePerfOverhead)
 ///////////////////////////////////////////////////////////////////////////////
 void SexyPerf::EndPerf()
 {
-	__int64 anEndTime;
+	int64 anEndTime;
 	QueryCounters(&anEndTime);
 
 	CollatePerfRecords();
 
 	gPerfOn = false;
 
-	__int64 aFreq = PerfTimer::GetCPUSpeed();
+	int64 aFreq = PerfTimer::GetCPUSpeed();
 
 	gDuration = ((double)(anEndTime - gStartTime - gCollateTime))*1000/aFreq;
 

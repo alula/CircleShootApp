@@ -737,10 +737,10 @@ void DDImage::NormalDrawLine(double theStartX, double theStartY, double theEndX,
 	if (mNoLock)
 		return;
 
-	double aMinX = std::min(theStartX, theEndX);
-	double aMinY = std::min(theStartY, theEndY);
-	double aMaxX = std::max(theStartX, theEndX);
-	double aMaxY = std::max(theStartY, theEndY);
+	double aMinX = min(theStartX, theEndX);
+	double aMinY = min(theStartY, theEndY);
+	double aMaxX = max(theStartX, theEndX);
+	double aMaxY = max(theStartY, theEndY);
 
 	LPDIRECTDRAWSURFACE aSurface = GetSurface();
 
@@ -1308,10 +1308,10 @@ void DDImage::AdditiveDrawLine(double theStartX, double theStartY, double theEnd
 	if (mNoLock)
 		return;
 
-	double aMinX = std::min(theStartX, theEndX);
-	double aMinY = std::min(theStartY, theEndY);
-	double aMaxX = std::max(theStartX, theEndX);
-	double aMaxY = std::max(theStartY, theEndY);
+	double aMinX = min(theStartX, theEndX);
+	double aMinY = min(theStartY, theEndY);
+	double aMaxX = max(theStartX, theEndX);
+	double aMaxY = max(theStartY, theEndY);
 
 	LPDIRECTDRAWSURFACE aSurface = GetSurface();
 
@@ -1674,16 +1674,16 @@ void DDImage::DrawLine(double theStartX, double theStartY, double theEndX, doubl
 
 	if (theStartY == theEndY)
 	{
-		int aStartX = std::min(theStartX, theEndX);
-		int aEndX = std::max(theStartX, theEndX);
+		int aStartX = min(theStartX, theEndX);
+		int aEndX = max(theStartX, theEndX);
 
 		FillRect(Rect(aStartX, theStartY, aEndX-aStartX+1, theEndY-theStartY+1), theColor, theDrawMode);
 		return;
 	}
 	else if (theStartX == theEndX)
 	{
-		int aStartY = std::min(theStartY, theEndY);
-		int aEndY = std::max(theStartY, theEndY);
+		int aStartY = min(theStartY, theEndY);
+		int aEndY = max(theStartY, theEndY);
 
 		FillRect(Rect(theStartX, aStartY, theEndX-theStartX+1, aEndY-aStartY+1), theColor, theDrawMode);
 		return;
@@ -1938,16 +1938,16 @@ void DDImage::DrawLineAA(double theStartX, double theStartY, double theEndX, dou
 
 	if (theStartY == theEndY)
 	{
-		int aStartX = std::min(theStartX, theEndX);
-		int aEndX = std::max(theStartX, theEndX);
+		int aStartX = min(theStartX, theEndX);
+		int aEndX = max(theStartX, theEndX);
 
 		FillRect(Rect(aStartX, theStartY, aEndX-aStartX+1, theEndY-theStartY+1), theColor, theDrawMode);
 		return;
 	}
 	else if (theStartX == theEndX)
 	{
-		int aStartY = std::min(theStartY, theEndY);
-		int aEndY = std::max(theStartY, theEndY);
+		int aStartY = min(theStartY, theEndY);
+		int aEndY = max(theStartY, theEndY);
 
 		FillRect(Rect(theStartX, aStartY, theEndX-theStartX+1, aEndY-aStartY+1), theColor, theDrawMode);
 		return;
@@ -2283,7 +2283,7 @@ void DDImage::AdditiveFillRect(const Rect& theRect, const Color& theColor)
 
 void DDImage::NormalBlt(Image* theImage, int theX, int theY, const Rect& theSrcRect, const Color& theColor)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	MemoryImage* aMemoryImage = dynamic_cast<MemoryImage*>(theImage);
 	DDImage* aDDImage = dynamic_cast<DDImage*>(theImage);	
@@ -2443,7 +2443,7 @@ void DDImage::NormalBlt(Image* theImage, int theX, int theY, const Rect& theSrcR
 
 void DDImage::NormalBltMirror(Image* theImage, int theX, int theY, const Rect& theSrcRectOrig, const Color& theColor)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	Rect theSrcRect = theSrcRectOrig;
 //	theSrcRect.mX = (theSrcRect.mX+theSrcRect.mWidth)*-1 + theImage->mWidth;
@@ -2510,7 +2510,7 @@ void DDImage::NormalBltMirror(Image* theImage, int theX, int theY, const Rect& t
 
 void DDImage::AdditiveBlt(Image* theImage, int theX, int theY, const Rect& theSrcRect, const Color& theColor)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	if (mNoLock)
 		return;
@@ -2565,7 +2565,7 @@ void DDImage::AdditiveBlt(Image* theImage, int theX, int theY, const Rect& theSr
 
 void DDImage::AdditiveBltMirror(Image* theImage, int theX, int theY, const Rect& theSrcRectOrig, const Color& theColor)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	if (mNoLock)
 		return;
@@ -2624,7 +2624,7 @@ void DDImage::AdditiveBltMirror(Image* theImage, int theX, int theY, const Rect&
 
 void DDImage::Blt(Image* theImage, int theX, int theY, const Rect& theSrcRect, const Color& theColor, int theDrawMode)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	//if (gDebug)
 	//	mApp->CopyToClipboard("+DDImage::Blt");	
@@ -2725,7 +2725,7 @@ void DDImage::BltMirror(Image* theImage, int theX, int theY, const Rect& theSrcR
 
 void DDImage::BltF(Image* theImage, float theX, float theY, const Rect& theSrcRect, const Rect &theClipRect, const Color& theColor, int theDrawMode)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	if (Check3D(this))
 	{
@@ -2749,7 +2749,7 @@ void DDImage::BltF(Image* theImage, float theX, float theY, const Rect& theSrcRe
 
 void DDImage::BltRotated(Image* theImage, float theX, float theY, const Rect &theSrcRect, const Rect& theClipRect, const Color& theColor, int theDrawMode, double theRot, float theRotCenterX, float theRotCenterY)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	if (mNoLock)
 		return;	
@@ -2845,7 +2845,7 @@ void DDImage::BltRotated(Image* theImage, float theX, float theY, const Rect &th
 
 void DDImage::StretchBlt(Image* theImage, const Rect& theDestRectOrig, const Rect& theSrcRectOrig, const Rect& theClipRect, const Color& theColor, int theDrawMode, bool fastStretch)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	DDImage* aSrcDDImage = dynamic_cast<DDImage*>(theImage);
 	MemoryImage* aSrcMemoryImage = dynamic_cast<MemoryImage*>(theImage);
@@ -2994,7 +2994,7 @@ void DDImage::StretchBlt(Image* theImage, const Rect& theDestRectOrig, const Rec
 
 void DDImage::StretchBltMirror(Image* theImage, const Rect& theDestRectOrig, const Rect& theSrcRectOrig, const Rect& theClipRect, const Color& theColor, int theDrawMode, bool fastStretch)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	DDImage* aSrcDDImage = dynamic_cast<DDImage*>(theImage);
 	MemoryImage* aSrcMemoryImage = dynamic_cast<MemoryImage*>(theImage);
@@ -3090,7 +3090,7 @@ void DDImage::StretchBltMirror(Image* theImage, const Rect& theDestRectOrig, con
 
 void DDImage::BltMatrix(Image* theImage, float x, float y, const SexyMatrix3 &theMatrix, const Rect& theClipRect, const Color& theColor, int theDrawMode, const Rect &theSrcRect, bool blend)
 {
-	theImage->mDrawn = true;
+	// theImage->mDrawn = true;
 
 	if (Check3D(this))
 	{
@@ -3122,7 +3122,7 @@ void DDImage::BltMatrix(Image* theImage, float x, float y, const SexyMatrix3 &th
 
 void DDImage::BltTrianglesTex(Image *theTexture, const TriVertex theVertices[][3], int theNumTriangles, const Rect& theClipRect, const Color &theColor, int theDrawMode, float tx, float ty, bool blend)
 {
-	theTexture->mDrawn = true;
+	// theTexture->mDrawn = true;
 
 	if (Check3D(this))
 	{
@@ -3175,10 +3175,10 @@ void DDImage::FillScanLinesWithCoverage(Span* theSpans, int theSpanCount, const 
 		int r = l + theSpans[0].mWidth, b = t;
 		for (int i = 1; i < theSpanCount; ++i)
 		{
-			l = std::min(theSpans[i].mX, l);
-			r = std::max(theSpans[i].mX + theSpans[i].mWidth - 1, r);
-			t = std::min(theSpans[i].mY, t);
-			b = std::max(theSpans[i].mY, b);
+			l = min(theSpans[i].mX, l);
+			r = max(theSpans[i].mX + theSpans[i].mWidth - 1, r);
+			t = min(theSpans[i].mY, t);
+			b = max(theSpans[i].mY, b);
 		}
 		for (int i = 0; i < theSpanCount; ++i)
 		{

@@ -339,8 +339,8 @@ Rect Widget::WriteCenteredLine(Graphics* g, int anOffset, const SexyString& theL
 	// account for shadow in position and size
 	// TODO: this may not be necessary.
 	return Rect(
-		aX + std::min(0,theShadowOffset.mX),
-		anOffset - aFont->GetAscent() + std::min(0,theShadowOffset.mY), 
+		aX + min(0,theShadowOffset.mX),
+		anOffset - aFont->GetAscent() + min(0,theShadowOffset.mY), 
 		aWidth + abs(theShadowOffset.mX), 
 		aFont->GetHeight() + abs(theShadowOffset.mY));
 }

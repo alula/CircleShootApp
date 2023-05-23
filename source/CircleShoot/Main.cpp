@@ -2,8 +2,8 @@
 
 #include "CircleShootApp.h"
 
-// #ifdef _WIN32
-#if 0
+#ifdef _WIN32
+//#if 0
 int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 #else
 int main() {

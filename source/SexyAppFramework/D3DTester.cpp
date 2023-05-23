@@ -124,8 +124,8 @@ void D3DTestImage::CopyToTexture8888(LPDIRECTDRAWSURFACE7 theTexture, int offx, 
 	aDesc.dwSize = sizeof(aDesc);
 	D3DTester::CheckDXError(theTexture->Lock(NULL,&aDesc,DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY,NULL),"Lock Texture");
 
-	int aWidth = std::min(texWidth, (GetWidth()-offx));
-	int aHeight = std::min(texHeight, (GetHeight()-offy));
+	int aWidth = min(texWidth, (GetWidth()-offx));
+	int aHeight = min(texHeight, (GetHeight()-offy));
 
 	if(aWidth < texWidth || aHeight < texHeight)
 		memset(aDesc.lpSurface, 0, aDesc.lPitch*aDesc.dwHeight);
@@ -159,8 +159,8 @@ void D3DTestImage::CopyToTexture4444(LPDIRECTDRAWSURFACE7 theTexture, int offx, 
 	aDesc.dwSize = sizeof(aDesc);
 	D3DTester::CheckDXError(theTexture->Lock(NULL,&aDesc,DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY,NULL),"Lock Texture");
 
-	int aWidth = std::min(texWidth,(GetWidth()-offx));
-	int aHeight = std::min(texHeight,(GetHeight()-offy));
+	int aWidth = min(texWidth,(GetWidth()-offx));
+	int aHeight = min(texHeight,(GetHeight()-offy));
 
 	if(aWidth < texWidth || aHeight < texHeight)
 		memset(aDesc.lpSurface, 0, aDesc.lPitch*aDesc.dwHeight);
@@ -224,8 +224,8 @@ void D3DTestImage::DrawToDevice(LPDIRECT3DDEVICE7 theDevice, LPDIRECTDRAWSURFACE
 	int aWidth = GetWidth();
 	int aHeight = GetHeight();
 
-	int aTexWidth = std::min(64,gD3DTestTextureWidth);
-	int aTexHeight = std::min(64,gD3DTestTextureHeight);
+	int aTexWidth = min(64,gD3DTestTextureWidth);
+	int aTexHeight = min(64,gD3DTestTextureHeight);
 
 	for(int j=0; j<aHeight; j+=aTexHeight)
 	{

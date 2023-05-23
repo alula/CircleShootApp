@@ -96,7 +96,7 @@ void ParticleMgr::Clear()
 // TODO: present in the header but probably inlined and idk what parameters it passes
 // void ParticleMgr::AddSparkle(float x, float y, int thePriority, int theStagger){}
 
-void ParticleMgr::AddSparkle(float x, float y, float vx, float vy, int thePriority, int theDuration, int theStagger, uint32_t theColor)
+void ParticleMgr::AddSparkle(float x, float y, float vx, float vy, int thePriority, int theDuration, int theStagger, uint theColor)
 {
     mSparkleList->push_back(Sparkle());
     Sparkle &aSparkle = mSparkleList->back();
@@ -193,19 +193,19 @@ void ParticleMgr::UpdateSparkles()
 
 void ParticleMgr::UpdateExplosions()
 {
-    for (ExplosionList::iterator aIter = mExplosionList.begin(); aIter != mExplosionList.end(); aIter++)
+    for (ExplosionList::iterator aIter = mExplosionList.begin(); aIter != mExplosionList.end();)
     {
         aIter->mUpdateCnt++;
 
-        if (aIter->mUpdateCnt < 0)
+        if (aIter->mUpdateCnt < 0) {
+            aIter++;
             continue;
+        }
 
         if (aIter->mUpdateCnt > 50)
         {
             mHadUpdate = true;
-            ExplosionList::iterator aDelIter = aIter;
-            aIter++;
-            mExplosionList.erase(aDelIter);
+            mExplosionList.erase(aIter++);
             continue;
         }
 
@@ -224,17 +224,20 @@ void ParticleMgr::UpdateExplosions()
         }
 
         aIter->mCurColor = alphaColor | aIter->mColor;
+        aIter++;
     }
 }
 
 void ParticleMgr::UpdateFloatingText()
 {
-    for (FloatingTextList::iterator aIter = mFloatingTextList.begin(); aIter != mFloatingTextList.end(); aIter++)
+    for (FloatingTextList::iterator aIter = mFloatingTextList.begin(); aIter != mFloatingTextList.end();)
     {
         aIter->mUpdateCnt++;
 
-        if (aIter->mUpdateCnt < 0)
+        if (aIter->mUpdateCnt < 0) {
+            aIter++;
             continue;
+        }
 
         if (aIter->mUpdateCnt == 1)
         {
@@ -245,14 +248,13 @@ void ParticleMgr::UpdateFloatingText()
         if (aIter->mUpdateCnt > aIter->mDuration)
         {
             mHadUpdate = true;
-            FloatingTextList::iterator aDelIter = aIter;
-            aIter++;
-            mFloatingTextList.erase(aDelIter);
+            mFloatingTextList.erase(aIter++);
             continue;
         }
 
         mHadUpdate = true;
         --aIter->y;
+        aIter++;
     }
 }
 

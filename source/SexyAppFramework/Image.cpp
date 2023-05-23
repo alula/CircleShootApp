@@ -12,7 +12,7 @@ Image::Image()
 	mNumCols = 1;
 
 	mAnimInfo = NULL;
-	mDrawn = false;
+	// mDrawn = false;
 }
 
 Image::Image(const Image& theImage) :
@@ -21,7 +21,7 @@ Image::Image(const Image& theImage) :
 	mNumRows(theImage.mNumRows),
 	mNumCols(theImage.mNumCols)
 {
-	mDrawn = false;
+	// mDrawn = false;
 	if (theImage.mAnimInfo != NULL)
 		mAnimInfo = new AnimInfo(*theImage.mAnimInfo);
 	else

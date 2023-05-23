@@ -38,17 +38,17 @@ StatsDialog::StatsDialog(Board *theBoard, bool doCounter) : CircleDialog(Sexy::I
     aNextStageTexts[9] = "Shoot balls through two or more gaps to score a double gap bonus!";
     aNextStageTexts[10] = "Press space bar to pause the game.";
     aNextStageTexts[11] = "Press 't' to show the amount of time left to get an Ace time.";
-    aGameOverTexts[1] = "Once you can accept the universe as matter expanding into nothing that is some"
+    aGameOverTexts[0] = "Once you can accept the universe as matter expanding into nothing that is some"
                         "thing, wearing stripes with plaid comes easy.";
-    aGameOverTexts[2] = "There is only one corner of the universe you can be certain of improving and t"
+    aGameOverTexts[1] = "There is only one corner of the universe you can be certain of improving and t"
                         "hat is your own self.";
-    aGameOverTexts[3] = "It is always wise to look ahead but difficult to look farther than you can see.";
-    aGameOverTexts[4] = "Good timber does not grow with ease. The stronger the wind the stronger the trees.";
-    aGameOverTexts[5] = "The fact that no one understands you doesn't make you an artist.";
-    aGameOverTexts[6] = "Honest criticism is hard to take, particularly from a relative, a friend, an a"
+    aGameOverTexts[2] = "It is always wise to look ahead but difficult to look farther than you can see.";
+    aGameOverTexts[3] = "Good timber does not grow with ease. The stronger the wind the stronger the trees.";
+    aGameOverTexts[4] = "The fact that no one understands you doesn't make you an artist.";
+    aGameOverTexts[5] = "Honest criticism is hard to take, particularly from a relative, a friend, an a"
                         "cquaintance, or a stranger.";
-    aGameOverTexts[7] = "A good plan today is better than a perfect plan tomorrow.";
-    aGameOverTexts[8] = "Good luck is often with the man who doesn't include it in his plans.";
+    aGameOverTexts[6] = "A good plan today is better than a perfect plan tomorrow.";
+    aGameOverTexts[7] = "Good luck is often with the man who doesn't include it in his plans.";
 
     mBoard = theBoard;
     mTimeBonus = 0;

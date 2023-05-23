@@ -23,7 +23,7 @@ namespace Sexy
     {
     public:
         FILE *mFileHandle;
-        void *mMemoryHandle;
+        const void *mMemoryHandle;
         ulong mMemoryLength;
         ulong mMemoryPosition;
         bool mDeallocate;
@@ -31,7 +31,7 @@ namespace Sexy
         explicit DataReader();
         virtual ~DataReader();
 
-        void OpenMemory(void *theMemory, ulong theLength, bool unknown);
+        void OpenMemory(const void *theMemory, ulong theLength, bool deallocate);
         bool OpenFile(const std::string &theFileName);
         void Close();
 
@@ -51,13 +51,13 @@ namespace Sexy
     public:
         FILE *mFileHandle;
         void *mMemoryHandle;
-        ulong mMemoryLength;
         ulong mMemoryPosition;
+        ulong mMemoryLength;
 
         explicit DataWriter();
         virtual ~DataWriter();
 
-        void OpenMemory(void *theMemory, ulong theLength);
+        void OpenMemory(ulong theLength);
         void Close();
         void EnsureCapacity(ulong theLength);
 
@@ -78,8 +78,8 @@ namespace Sexy
         typedef std::map<void *, int> PointerToIntMap;
         typedef std::map<int, void *> IntToPointerMap;
 
-        DataReader *mReader = NULL;
-        DataWriter *mWriter = NULL;
+        DataReader *mReader;
+        DataWriter *mWriter;
 
         explicit DataSync(DataReader &reader);
         explicit DataSync(DataWriter &writer);

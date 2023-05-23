@@ -114,11 +114,9 @@ bool BassMusicInterface::LoadMusic(int theSongId, const std::string& theFileName
 		p_fclose(aFP);
 
 #ifdef BASS2
-		if (gBass->mVersion2)
-			aHMusic = gBass->BASS_MusicLoad2(FALSE, (void*) theFileName.c_str(), 0, 0, BASS_MUSIC_LOOP | BASS2_MUSIC_RAMP, 0);
-		else
+		aHMusic = gBass->BASS_MusicLoad(FALSE, (void*) theFileName.c_str(), 0, 0, BASS_MUSIC_LOOP | BASS2_MUSIC_RAMP, 0);
 #else
-			aHMusic = gBass->BASS_MusicLoad(FALSE, (void*) theFileName.c_str(), 0, 0, BASS_MUSIC_LOOP);
+		aHMusic = gBass->BASS_MusicLoad(FALSE, (void*) theFileName.c_str(), 0, 0, BASS_MUSIC_LOOP);
 #endif
 		delete aData;
 	}
@@ -157,8 +155,13 @@ void BassMusicInterface::PlayMusic(int theSongId, int theOffset, bool noLoop)
 		{
 			BOOL flush = theOffset == -1 ? FALSE : TRUE;
 			gBass->BASS_StreamPlay(aMusicInfo->mHStream, flush, noLoop ? 0 : BASS_MUSIC_LOOP);
-			if (theOffset > 0)
+			if (theOffset > 0) {
+#ifdef BASS2
+				gBass->BASS_ChannelSetPosition(aMusicInfo->mHStream, theOffset, BASS_POS_BYTE);
+#else
 				gBass->BASS_ChannelSetPosition(aMusicInfo->mHStream, theOffset);
+#endif
+			}
 		}
 	}
 }
@@ -286,8 +289,13 @@ void BassMusicInterface::FadeIn(int theSongId, int theOffset, double theSpeed, b
 		{
 			BOOL flush = theOffset == -1 ? FALSE : TRUE;
 			gBass->BASS_StreamPlay(aMusicInfo->mHStream, flush, noLoop ? 0 : BASS_MUSIC_LOOP);
-			if (theOffset > 0)
+			if (theOffset > 0) {
+#ifdef BASS2
+				gBass->BASS_ChannelSetPosition(aMusicInfo->mHStream, theOffset, BASS_POS_BYTE);
+#else
 				gBass->BASS_ChannelSetPosition(aMusicInfo->mHStream, theOffset);
+#endif
+			}
 		}
 
 	}
@@ -328,12 +336,8 @@ void BassMusicInterface::SetVolume(double theVolume)
 	int aVolume = (int) (theVolume * mMaxMusicVolume);
 	
 #ifdef BASS2
-	if (gBass->mVersion2)
-	{
-		gBass->BASS_SetConfig(/*BASS_CONFIG_GVOL_MUSIC*/6, (int) (theVolume * 100));
-		gBass->BASS_SetConfig(/*BASS_CONFIG_GVOL_STREAM*/5, (int) (theVolume * 100));
-	}
-	else
+	gBass->BASS_SetConfig(/*BASS_CONFIG_GVOL_MUSIC*/6, (int) (theVolume * 100));
+	gBass->BASS_SetConfig(/*BASS_CONFIG_GVOL_STREAM*/5, (int) (theVolume * 100));
 #else
 		gBass->BASS_SetGlobalVolumes(aVolume, aVolume, aVolume);
 #endif
@@ -359,7 +363,7 @@ void BassMusicInterface::SetSongMaxVolume(int theSongId, double theMaxVolume)
 		BassMusicInfo* aMusicInfo = &anItr->second;
 
 		aMusicInfo->mVolumeCap = theMaxVolume;
-		aMusicInfo->mVolume = std::min(aMusicInfo->mVolume, theMaxVolume);
+		aMusicInfo->mVolume = min(aMusicInfo->mVolume, theMaxVolume);
 		gBass->BASS_ChannelSetAttributes(aMusicInfo->GetHandle(), -1, (int) (aMusicInfo->mVolume*100), -101);
 	}
 }
@@ -428,7 +432,7 @@ int BassMusicInterface::GetMusicOrder(int theSongId)
 	{		
 		BassMusicInfo* aMusicInfo = &anItr->second;
 #ifdef BASS2
-		int aPosition = gBass->BASS_MusicGetOrderPosition(aMusicInfo->GetHandle());
+		int aPosition = gBass->BASS_ChannelGetPosition(aMusicInfo->GetHandle(), BASS_POS_MUSIC_ORDER);
 #else
 		int aPosition = gBass->BASS_ChannelGetPosition(aMusicInfo->GetHandle());
 #endif

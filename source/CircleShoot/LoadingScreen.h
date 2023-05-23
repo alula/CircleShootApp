@@ -11,9 +11,9 @@ namespace Sexy
     {
     private:
         std::string mRegistrationStatusString;
-        HyperlinkWidget *mClickToPlayLink = NULL;
-        HyperlinkWidget *mRegisterLink = NULL;
-        double mLoadingProgress = 0.0;
+        HyperlinkWidget *mClickToPlayLink;
+        HyperlinkWidget *mRegisterLink;
+        double mLoadingProgress;
         bool unk5;
         std::string unk6;
         bool unk7;

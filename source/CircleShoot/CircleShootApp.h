@@ -8,6 +8,7 @@ namespace Sexy
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
     class WidgetMover;
+	class Widget;
     class Board;
     class WorkerThread;
     class LevelParser;
@@ -22,33 +23,33 @@ namespace Sexy
     class CircleShootApp : public SexyAppBase
     {
     public:
-        WidgetMover *mWidgetMover = NULL;
-        Board *mBoard = NULL;
-        MainMenu *mMainMenu = NULL;
-        PracticeScreen *mPracticeScreen = NULL;
-        Widget *mAdventureScreen = NULL;
-        Widget *mHelpScreen = NULL;
-        Widget *mMoreGamesScreen = NULL;
-        LoadingScreen *mLoadingScreen = NULL;
+        WidgetMover *mWidgetMover;
+        Board *mBoard;
+        MainMenu *mMainMenu;
+        PracticeScreen *mPracticeScreen;
+        Widget *mAdventureScreen;
+        Widget *mHelpScreen;
+        Widget *mMoreGamesScreen;
+        LoadingScreen *mLoadingScreen;
         Widget *mUnk11;
-        WorkerThread *mWorkerThread = NULL;
-        LevelParser *mLevelParser = NULL;
-        ProfileMgr *mProfileMgr = NULL;
-        HighScoreMgr *mHighScoreMgr = NULL;
-        UserProfile *mProfile = NULL;
+        WorkerThread *mWorkerThread;
+        LevelParser *mLevelParser;
+        ProfileMgr *mProfileMgr;
+        HighScoreMgr *mHighScoreMgr;
+        UserProfile *mProfile;
         Buffer mUnk17;
 
-        int mLastSong = 0;
-        int mLastSongSwitchTime = 0;
-        int mSongId = 0;
+        int mLastSong;
+        int mLastSongSwitchTime;
+        int mSongId;
         bool mUnk24;
-        int mUnk28 = 0;
+        int mUnk28;
         int mUnk29;
         bool mUnk30;
         int mUnk31;
-        int mMaxExecutions = 0;
-        int mMaxPlays = 0;
-        int mMaxTime = 0;
+        int mMaxExecutions;
+        int mMaxPlays;
+        int mMaxTime;
         bool mUnk35;
 
         CircleShootApp();
@@ -58,6 +59,8 @@ namespace Sexy
         virtual void Shutdown();
         virtual void UpdateFrames();
         virtual void ButtonDepress(int theId);
+
+        virtual Dialog* NewDialog(int theDialogId, bool isModal, const SexyString& theDialogHeader, const SexyString& theDialogLines, const SexyString& theDialogFooter, int theButtonMode);
 
         Board *GetBoard() { return mBoard; }
 
@@ -79,6 +82,7 @@ namespace Sexy
         void DoStatsDialog(bool a1, bool a2);
 
         void DoCreateUserDialog();
+        void DoConfirmQuitDialog();
 
         void SwitchSong(int id);
 
@@ -86,10 +90,12 @@ namespace Sexy
 
         void DoOptionsDialog();
         void FinishOptionsDialog(bool a2);
+        void FinishConfirmQuitDialog(bool quit);
         bool CheckYesNoButton(int theButton);
 
         void ShowMainMenu();
         void ShowPracticeScreeen(bool a2);
+        void ShowMoreGamesScreen();
     };
 
 };

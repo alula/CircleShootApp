@@ -6,7 +6,7 @@
 
 #include "BlendedImage.h"
 
-#include <cmath>
+#include <math.h>
 
 using namespace Sexy;
 

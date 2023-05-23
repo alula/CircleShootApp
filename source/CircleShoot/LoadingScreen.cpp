@@ -12,7 +12,7 @@
 #include "Res.h"
 #include "LoadingScreen.h"
 
-#include <cmath>
+#include <math.h>
 
 using namespace Sexy;
 
@@ -95,7 +95,7 @@ void LoadingScreen::Update()
     double progress = gSexyAppBase->GetLoadingThreadProgress();
     if (progress > mLoadingProgress)
     {
-        mLoadingProgress = fmin(progress, mLoadingProgress + 0.01);
+        mLoadingProgress = min(progress, mLoadingProgress + 0.01);
         MarkDirty();
 
         if (mLoadingProgress >= 1.0f)

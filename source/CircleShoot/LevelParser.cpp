@@ -90,65 +90,67 @@ LevelParser::~LevelParser()
 
 LevelDesc &LevelParser::GetLevel(int theDifficulty, const StringList &theAvoidCurve, const std::string &theFindCurve)
 {
-    std::vector<LevelDesc *> v18;
-    std::vector<LevelDesc *> v17;
-    int v15 = 0;
+    std::vector<LevelDesc *> aLevelsDifficulty;
+    std::vector<LevelDesc *> aLevelList;
+    int aDifficulty = 0;
+	//int i;
     LevelDesc *aLevel = NULL;
 
-    for (int i = 0; i < mLevels.size(); i++)
+    for (int i = 0; i < mLevels.size(); ++i)
     {
-        LevelDesc &theLevel = mLevels[i];
+        LevelDesc *theLevel = &mLevels[i];
 
-        if (theFindCurve.empty() || theFindCurve.compare(theLevel.mName) == 0)
+		if (!theFindCurve.empty() && theFindCurve.compare(theLevel->mName) != 0) continue;
+        
+        if (theLevel->mDifficulty > theDifficulty && (aLevel == NULL || aLevel->mDifficulty > theLevel->mDifficulty))
         {
-            if (theLevel.mDifficulty > theDifficulty && (aLevel == NULL || theLevel.mDifficulty < aLevel->mDifficulty))
-            {
-                aLevel = &theLevel;
-            }
+            aLevel = theLevel;
+        }
 
-            if (v15 == theLevel.mDifficulty)
-            {
-                v18.push_back(&theLevel);
-            }
-            else if (v15 < theLevel.mDifficulty && theLevel.mDifficulty <= theDifficulty)
-            {
-                v18.clear();
-                v18.push_back(&theLevel);
-                v15 = theLevel.mDifficulty;
-            }
+        if (theLevel->mDifficulty == aDifficulty)
+        {
+            aLevelsDifficulty.push_back(theLevel);
+        }
+        else if (theLevel->mDifficulty > aDifficulty && theLevel->mDifficulty <= theDifficulty)
+        {
+            aLevelsDifficulty.clear();
+            aLevelsDifficulty.push_back(theLevel);
+            aDifficulty = theLevel->mDifficulty;
         }
     }
 
     if (!theAvoidCurve.empty())
     {
-        for (int i = 0; i < v18.size(); i++)
+        for (int i = 0; i < aLevelsDifficulty.size(); i++)
         {
-            LevelDesc *theLevel = v18[i];
+            LevelDesc *theLevel = aLevelsDifficulty[i];
 
             if (std::find(theAvoidCurve.begin(), theAvoidCurve.end(), theLevel->mName) == theAvoidCurve.end())
             {
-                v17.push_back(theLevel);
+                aLevelList.push_back(theLevel);
             }
         }
     }
 
-    if (v17.empty())
-        v17 = v18;
+    if (aLevelList.empty())
+        aLevelList = aLevelsDifficulty;
 
-    if (!v17.empty())
+    if (!aLevelList.empty())
     {
-        unsigned int aRnd = Sexy::AppRand() % v17.size();
-        std::vector<LevelDesc *>::iterator anItr = v17.begin();
+        int aRnd = Sexy::AppRand();
+		aRnd %= (int)aLevelList.size();
+
+        std::vector<LevelDesc *>::iterator anItr = aLevelList.begin();
 
         // what the fuck???
         for (int i = 0; i < aRnd; i++)
             anItr++;
 
-        aLevel = *anItr;
+        return **anItr;
     }
 
     if (aLevel == NULL)
-        aLevel = &mLevels[0];
+        return mLevels[0];
 
     return *aLevel;
 }
@@ -593,12 +595,19 @@ void GetCurveAttribute(
 
         int aNameSize = aName.size();
         int aDigit;
-        int aStartCurve = 0;
-        int aEndCurve = 2;
+        int aStartCurve;
+        int aEndCurve;
 
         if (aNameSize != 0 && (aDigit = aName[aNameSize - 1] - '0', aDigit <= 9))
         {
+            aEndCurve = aDigit;
             aName.resize(aNameSize - 1);
+            aStartCurve = aEndCurve;
+        }
+        else
+        {
+            aStartCurve = 0;
+            aEndCurve = 2;
         }
 
         for (int i = aStartCurve; i < aEndCurve; i++)
@@ -650,7 +659,7 @@ bool LevelParser::DoParseLevel(XMLElement &theElem, bool isLevel)
 
     for (int i = 0; i < 3; i++)
     {
-        if (GetAttribute(theElem, Sexy::StrFormat("settings%d", i + i), aVal))
+        if (GetAttribute(theElem, Sexy::StrFormat("settings%d", i + 1), aVal))
         {
             LevelDescMap::iterator anItr = mSettingsMap.find(aVal);
 
@@ -678,37 +687,37 @@ bool LevelParser::DoParseLevel(XMLElement &theElem, bool isLevel)
     }
 
     if (GetAttribute(theElem, "bgcolor", aVal))
-        ParseHex(aVal.c_str(), &aDesc.mBGColor);
+        sscanf(aVal.c_str(), "%x", &aDesc.mBGColor);
 
     if (GetAttribute(theElem, "gx", aVal))
-        ParseInt(aVal.c_str(), &aDesc.mGunX);
+        sscanf(aVal.c_str(), "%d", &aDesc.mGunX);
 
     if (GetAttribute(theElem, "gy", aVal))
-        ParseInt(aVal.c_str(), &aDesc.mGunY);
+        sscanf(aVal.c_str(), "%d", &aDesc.mGunY);
 
     if (GetAttribute(theElem, "firespeed", aVal))
-        ParseFloat(aVal.c_str(), &aDesc.mFireSpeed);
+        sscanf(aVal.c_str(), "%f", &aDesc.mFireSpeed);
 
     if (GetAttribute(theElem, "reloaddelay", aVal))
-        ParseInt(aVal.c_str(), &aDesc.mReloadDelay);
+        sscanf(aVal.c_str(), "%d", &aDesc.mReloadDelay);
 
     if (GetAttribute(theElem, "difficulty", aVal))
-        ParseInt(aVal.c_str(), &aDesc.mDifficulty);
+        sscanf(aVal.c_str(), "%d", &aDesc.mDifficulty);
 
     if (GetAttribute(theElem, "huerot", aVal))
-        ParseInt(aVal.c_str(), &aDesc.mHueRot);
+        sscanf(aVal.c_str(), "%d", &aDesc.mHueRot);
 
     if (GetAttribute(theElem, "treasurefreq", aVal))
-        ParseInt(aVal.c_str(), &aDesc.mTreasureFreq);
+        sscanf(aVal.c_str(), "%d", &aDesc.mTreasureFreq);
 
     if (GetAttribute(theElem, "partime", aVal))
-        ParseInt(aVal.c_str(), &aDesc.mParTime);
+        sscanf(aVal.c_str(), "%d", &aDesc.mParTime);
 
     if (GetAttribute(theElem, "image", aVal))
         aDesc.mImagePath = GetPath(aVal);
 
     if (GetAttribute(theElem, "space", aVal))
-        ParseBool(aVal.c_str(), &aDesc.mInSpace);
+        aDesc.mInSpace = stricmp(aVal.c_str(), "true") == 0;
 
     int aPowerFreq = 0;
     if (GetAttribute(theElem, "powerfreq", aVal) && sscanf(aVal.c_str(), "%d", &aPowerFreq) == 1)
@@ -717,7 +726,8 @@ bool LevelParser::DoParseLevel(XMLElement &theElem, bool isLevel)
         {
             for (int j = 0; j < 4; j++)
             {
-                aDesc.mCurveDesc[i].mPowerUpFreq[j] = aPowerFreq;
+                if (aDesc.mCurveDesc[i].mPowerUpFreq[j] > 0)
+                    aDesc.mCurveDesc[i].mPowerUpFreq[j] = aPowerFreq;
             }
         }
     }

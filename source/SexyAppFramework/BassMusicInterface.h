@@ -2,7 +2,11 @@
 #define __BASSMUSICINTERFACE_H__
 
 #include "MusicInterface.h"
-#include "bass.h"
+#ifdef BASS2
+#include "bass24.h"
+#else
+#include "bass18.h"
+#endif
 
 namespace Sexy
 {

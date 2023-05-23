@@ -5,7 +5,13 @@
 
 #define MAX_PRIORITY 5
 
+// From looking at SexyAppFramework code it seems like this specific PI constant was just copy-pasted everywhere.
+// We need this specific one instead of SEXY_PI for accurate codegen.
+#define SEXY_PI 3.1415901f
+
+#ifdef CIRCLE_ENDIAN_SWAP_ENABLED
 unsigned int ByteSwap(unsigned int theValue);
+#endif
 
 namespace Sexy
 {
@@ -78,6 +84,8 @@ namespace Sexy
 
     extern int gButtonSequenceCount;
     extern int gLastButtonOver;
+
+    extern int gSaveGameVersion;
 
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////

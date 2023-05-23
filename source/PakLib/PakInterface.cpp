@@ -233,7 +233,7 @@ int PakInterface::FSeek(PFILE* theFile, long theOffset, int theOrigin)
 		else if (theOrigin == SEEK_CUR)
 			theFile->mPos += theOffset;
 
-		theFile->mPos = std::max(std::min(theFile->mPos, theFile->mRecord->mSize), 0);
+		theFile->mPos = max(min(theFile->mPos, theFile->mRecord->mSize), 0);
 		return 0;
 	}
 	else
@@ -252,7 +252,7 @@ size_t PakInterface::FRead(void* thePtr, int theElemSize, int theCount, PFILE* t
 {
 	if (theFile->mRecord != NULL)
 	{
-		int aSizeBytes = std::min(theElemSize*theCount, theFile->mRecord->mSize - theFile->mPos);
+		int aSizeBytes = min(theElemSize*theCount, theFile->mRecord->mSize - theFile->mPos);
 
 		uchar* src = (uchar*) theFile->mRecord->mCollection->mDataPtr + theFile->mRecord->mStartPos + theFile->mPos;
 		uchar* dest = (uchar*) thePtr;		
@@ -287,7 +287,7 @@ int PakInterface::UnGetC(int theChar, PFILE* theFile)
 	if (theFile->mRecord != NULL)
 	{
 		// This won't work if we're not pushing the same chars back in the stream
-		theFile->mPos = std::max(theFile->mPos - 1, 0);
+		theFile->mPos = max(theFile->mPos - 1, 0);
 		return theChar;
 	}
 

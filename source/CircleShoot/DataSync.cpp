@@ -18,7 +18,7 @@ DataReader::~DataReader()
     Close();
 }
 
-void DataReader::OpenMemory(void *theMemory, ulong theLength, bool deallocate)
+void DataReader::OpenMemory(const void *theMemory, ulong theLength, bool deallocate)
 {
     Close();
 
@@ -124,7 +124,15 @@ DataWriter::~DataWriter()
     Close();
 }
 
-void DataWriter::OpenMemory(void *theMemory, ulong theLength) {}
+void DataWriter::OpenMemory(ulong theLength) {
+    Close();
+
+    if (theLength < 32)
+        theLength = 32;
+
+    mMemoryLength = theLength;
+    mMemoryHandle = new char[theLength];
+}
 
 void DataWriter::Close()
 {
@@ -149,10 +157,10 @@ void DataWriter::EnsureCapacity(ulong theLength)
     if (mMemoryLength < theLength)
     {
         ulong newLength = mMemoryLength;
-        while (newLength < theLength)
+        do
         {
             newLength *= 2;
-        }
+        } while (newLength < theLength);
         mMemoryLength = newLength;
 
         void *newMemory = new char[newLength];
