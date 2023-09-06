@@ -1,0 +1,6 @@
+source/ImageLib/j2k-codec/** linguist-vendored
+source/ImageLib/jpeg/** linguist-vendored
+source/ImageLib/jpeg2000/** linguist-vendored
+source/ImageLib/png/** linguist-vendored
+source/ImageLib/zlib/** linguist-vendored
+3rdparty/** linguist-vendored
