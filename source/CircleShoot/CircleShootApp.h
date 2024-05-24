@@ -79,9 +79,19 @@ namespace Sexy
         void LoadingThreadCompleted();
 
         void FinishStatsDialog();
+        void FinishConfirmMainMenuDialog(bool a2);
+        void FinishNeedRegisterDialog(bool a2);
+        void FinishGetReadyDialog(bool saveSettings);
         void DoStatsDialog(bool a1, bool a2);
 
         void DoCreateUserDialog();
+        void DoConfirmCheckForUpdatesDialog();
+        void DoUserDialog();
+        void DoRenameUserDialog();
+        void DoConfirmContinueDialog();
+        void DoNextTempleDialog();
+        void DoConfirmDeleteUserDialog();
+        void DoConfirmMainMenuDialog();
         void DoConfirmQuitDialog();
 
         void SwitchSong(int id);
@@ -91,10 +101,11 @@ namespace Sexy
         void DoOptionsDialog();
         void FinishOptionsDialog(bool a2);
         void FinishConfirmQuitDialog(bool quit);
+        void FinishConfirmContinueDialog(bool a2);
         bool CheckYesNoButton(int theButton);
 
         void ShowMainMenu();
-        void ShowPracticeScreeen(bool a2);
+        void ShowPracticeScreen(bool a2);
         void ShowMoreGamesScreen();
     };
 

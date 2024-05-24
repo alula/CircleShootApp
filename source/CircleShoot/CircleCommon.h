@@ -95,7 +95,7 @@ namespace Sexy
     int GetBoardStateCount();
     int AppRand();
     int ThreadRand();
-    std::string GetSaveGameName(bool, int);
+    std::string GetSaveGameName(bool isAdventure, int playerNum);
 
     void MirrorPoint(float &x, float &y, MirrorType theMirror);
     void MirrorPoint(int &x, int &y, MirrorType theMirror);
