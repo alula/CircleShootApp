@@ -100,6 +100,20 @@ int Sexy::ThreadRand()
     }
 }
 
+std::string Sexy::GetSaveGameName(bool isAdventure, int playerNum)
+{
+    std::string gameMode;
+    if (isAdventure)
+    {
+        gameMode = "adv";
+    }
+    else
+    {
+        gameMode = "prc";
+    }
+    return Sexy::StrFormat("%s%d.sav", playerNum, playerNum);
+}
+
 void Sexy::MirrorPoint(float &x, float &y, MirrorType theMirror)
 {
     switch (theMirror)
