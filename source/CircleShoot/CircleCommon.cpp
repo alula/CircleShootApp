@@ -111,7 +111,7 @@ std::string Sexy::GetSaveGameName(bool isAdventure, int playerNum)
     {
         gameMode = "prc";
     }
-    return Sexy::StrFormat("%s%d.sav", playerNum, playerNum);
+    return Sexy::StrFormat("%s%d.sav", gameMode, playerNum);
 }
 
 void Sexy::MirrorPoint(float &x, float &y, MirrorType theMirror)
