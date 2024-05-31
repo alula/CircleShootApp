@@ -137,7 +137,7 @@ Board::Board(CircleShootApp *theApp)
     mMenuButton->Resize(540, 3, menuWidth, menuHeight);
     mContinueButton->Resize(410, 450 - mContinueButton->mHeight, 200, mContinueButton->mHeight);
 
-    mOverlayWidget->Resize(0, 0, 640, 480);
+    mOverlayWidget->Resize(0, 0, CIRCLE_WINDOW_WIDTH, CIRCLE_WINDOW_HEIGHT);
 
     mScore = 0;
     mScoreDisplay = 0;
@@ -1193,7 +1193,7 @@ void Board::DrawOverlay(Graphics *g)
     if (!mShowBallsDuringPause && mLives > 0)
     {
         g->SetColor(Color(0, 0, 0, 255 * mPauseFade / 100));
-        g->FillRect(0, 0, 640, 480);
+        g->FillRect(0, 0, CIRCLE_WINDOW_WIDTH, CIRCLE_WINDOW_HEIGHT);
     }
 
     if (mDialogCount == 0)
@@ -1403,6 +1403,7 @@ void Board::KeyChar(char theChar)
     {
         mSpriteMgr->ToggleSpaceScroll();
     }
+#if 1
     else if (c == 'P') // TODO THIS IS EXTRA DEBUG FUNCTIONALITY
     {
         mScore = mScoreTarget;
@@ -1412,6 +1413,11 @@ void Board::KeyChar(char theChar)
             mCurveMgr[i]->DetonateBalls();
         }
     }
+    else if (c == 'O') // TODO THIS IS EXTRA DEBUG FUNCTIONALITY
+    {
+        SetLosing();
+    }
+#endif
 }
 
 void Board::KeyDown(KeyCode theKey)
@@ -1885,7 +1891,8 @@ void Board::SaveGame(const std::string &theFilePath)
     aUnkState = -1;
 }
 
-void Board::LoadGame(const std::string &theFilePath) {
+void Board::LoadGame(const std::string &theFilePath)
+{
     // Stub, code not present in executable.
 }
 

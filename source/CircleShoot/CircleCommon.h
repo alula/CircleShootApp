@@ -3,7 +3,12 @@
 
 #include <SexyAppFramework/Point.h>
 
+// For convenience of making mods that want a different window size.
+#define CIRCLE_WINDOW_WIDTH 640
+#define CIRCLE_WINDOW_HEIGHT 480
+
 #define MAX_PRIORITY 5
+#define MAX_BALL_COLORS 6
 
 // From looking at SexyAppFramework code it seems like this specific PI constant was just copy-pasted everywhere.
 // We need this specific one instead of SEXY_PI for accurate codegen.
@@ -77,10 +82,10 @@ namespace Sexy
 
     extern const char *gSmallGauntletStages[];
     extern const char *gGauntletStages[];
-    extern int gTextBallColors[6];
-    extern int gDarkBallColors[6];
-    extern int gBrightBallColors[6];
-    extern int gBallColors[6];
+    extern uint gTextBallColors[MAX_BALL_COLORS];
+    extern uint gDarkBallColors[MAX_BALL_COLORS];
+    extern uint gBrightBallColors[MAX_BALL_COLORS];
+    extern uint gBallColors[MAX_BALL_COLORS];
 
     extern int gButtonSequenceCount;
     extern int gLastButtonOver;

@@ -30,7 +30,7 @@ public:
         mMouseVisible = false;
         mHasTransparencies = true;
         mHasAlpha = true;
-        Resize(0, 0, 640, 480);
+        Resize(0, 0, CIRCLE_WINDOW_WIDTH, CIRCLE_WINDOW_HEIGHT);
     }
 
     virtual ~MainMenuOverlay() {}
@@ -67,7 +67,7 @@ MainMenu::MainMenu()
 
     int aTextWidth = Sexy::FONT_MAIN10->StringWidth(mNotYouLink->mLabel) + 20;
     mNotYouLink->Resize(
-        (640 - aTextWidth) / 2,
+        (CIRCLE_WINDOW_WIDTH - aTextWidth) / 2,
         30,
         aTextWidth,
         (Sexy::FONT_MAIN10->GetHeight() + 20));
@@ -98,7 +98,7 @@ void MainMenu::DrawOverlay(Graphics *g)
         int v4 = mFlash * 255;
         g->SetDrawMode(Graphics::DRAWMODE_ADDITIVE);
         g->SetColor(Color(v4 / 25, v4 / 25, v4 / 25));
-        g->FillRect(0, 0, 640, 480);
+        g->FillRect(0, 0, CIRCLE_WINDOW_WIDTH, CIRCLE_WINDOW_HEIGHT);
         g->SetDrawMode(Graphics::DRAWMODE_NORMAL);
     }
 }
@@ -373,5 +373,5 @@ void MainMenu::Draw(Graphics *g)
     }
 
     int textWidth = Sexy::FONT_BROWNTITLE->StringWidth(welcome);
-    g->DrawString(welcome, (640 - textWidth) / 2, 32);
+    g->DrawString(welcome, (CIRCLE_WINDOW_WIDTH - textWidth) / 2, 32);
 }

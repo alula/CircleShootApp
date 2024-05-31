@@ -85,6 +85,12 @@ CurveMgr::~CurveMgr()
 void CurveMgr::SetLosing()
 {
     mBulletList.clear();
+
+    for (BallList::iterator anItr = mBallList.begin(); anItr != mBallList.end(); anItr++)
+    {
+        Ball *aBall = *anItr;
+        aBall->SetSuckCount(mAdvanceSpeed * 4.0f);
+    }
 }
 
 void CurveMgr::SetupLevel(LevelDesc *theDesc, SpriteMgr *theSpriteMgr, int theCurveNum, MirrorType theMirror)
@@ -458,7 +464,7 @@ bool CurveMgr::CheckGapShot(Bullet *theBullet)
     {
         const WayPoint *aWayPoint = &mWayPointMgr->GetWayPointList()[aBallIdx];
         if (aBulDiameterSq > ((aWayPoint->x - aBulX) * (aWayPoint->x - aBulX) +
-                                 (aWayPoint->y - aBulY) * (aWayPoint->y - aBulY)))
+                              (aWayPoint->y - aBulY) * (aWayPoint->y - aBulY)))
         {
             return false;
         }
@@ -752,7 +758,7 @@ int CurveMgr::DrawPathSparkles(int theStartPoint, int theStagger, bool addSound)
 {
     int aPathHiliteWP = theStartPoint;
     bool forwardPitch = ((mCurveNum ^ 1) & 1) != 0;
-    int aPathHilitePitch = forwardPitch ? 0 : -14;
+    int aPathHilitePitch = forwardPitch ? 0 : -20;
     int aSoundCtr = 0;
 
     while (aPathHiliteWP < mWayPointMgr->GetNumPoints())
@@ -762,7 +768,7 @@ int CurveMgr::DrawPathSparkles(int theStartPoint, int theStagger, bool addSound)
         GetPoint(aPathHiliteWP, aSparkleX, aSparkleY, aSparklePriority);
         mBoard->mParticleMgr->AddSparkle(aSparkleX, aSparkleY, 0, 0, aSparklePriority, 0, theStagger, 0xFFFF00);
 
-        if (addSound && aSoundCtr == 26 * (aSoundCtr / 25))
+        if (addSound && (aSoundCtr % 25) == 0)
         {
             if (forwardPitch)
             {
@@ -771,7 +777,7 @@ int CurveMgr::DrawPathSparkles(int theStartPoint, int theStagger, bool addSound)
             }
             else
             {
-                if (aPathHilitePitch > 0)
+                if (aPathHilitePitch < 0)
                     aPathHilitePitch++;
             }
 

@@ -14,10 +14,10 @@
 
 using namespace Sexy;
 
-BlendedImage *gBlendedBombLights[6];
+BlendedImage *gBlendedBombLights[MAX_BALL_COLORS];
 BlendedImage *gBlendedPowerupLights[4];
-BlendedImage *gBlendedPowerups[4][6];
-BlendedImage *gBlendedBalls[6];
+BlendedImage *gBlendedPowerups[4][MAX_BALL_COLORS];
+BlendedImage *gBlendedBalls[MAX_BALL_COLORS];
 
 int Ball::mIdGen = 0;
 bool gSpeedUp = false;

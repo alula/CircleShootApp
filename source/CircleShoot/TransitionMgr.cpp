@@ -1,6 +1,8 @@
 #include "Zuma_Prefix.pch"
 
 #include <SexyAppFramework/SexyAppBase.h>
+#include <SexyAppFramework/ButtonWidget.h>
+#include <SexyAppFramework/Common.h>
 #include <SexyAppFramework/Graphics.h>
 #include <SexyAppFramework/Font.h>
 #include <SexyAppFramework/Image.h>
@@ -283,9 +285,37 @@ void TransitionMgr::DrawTextBlurb(Graphics *g)
     }
 }
 
-void TransitionMgr::DrawStageCompleteText(Graphics *g) {}
+void TransitionMgr::DrawStageCompleteText(Graphics *g)
+{
+    Graphics sg(*g);
 
-void TransitionMgr::DrawStageComplete(Graphics *g) {}
+    if (mState == TransitionState_StageComplete)
+    {
+        if (mStateCount < mStageCompleteFrame || mStateCount > mStageCompleteFrame + 150)
+            return;
+
+        if (mStateCount - mStageCompleteFrame < 50)
+            sg.ClipRect(0, 0, mBoard->mGun->GetCenterX(), 480);
+    }
+
+    std::string aText = "COMPLETE";
+    int center = Sexy::FONT_HUGE->StringWidth(aText);
+
+    sg.SetColor(Color(0xFFFF00));
+    sg.SetFont(Sexy::FONT_HUGE);
+    sg.DrawString(aText, (CIRCLE_WINDOW_WIDTH - center) / 2, CIRCLE_WINDOW_HEIGHT / 2 + 10);
+}
+
+void TransitionMgr::DrawStageComplete(Graphics *g)
+{
+    mBoard->mSpriteMgr->DrawLevel(g);
+    DrawLevelFade(g);
+    DrawStageCompleteText(g);
+    DrawLetterStamp(g);
+    mBoard->mParticleMgr->Draw(g, 0);
+    DrawFrog(g);
+    mBoard->mParticleMgr->Draw(g, 4);
+}
 
 void TransitionMgr::DrawLevelBegin(Graphics *g)
 {
@@ -329,28 +359,25 @@ void TransitionMgr::DrawLosing(Graphics *g)
     aDrawer.Draw(g, mBoard->mSpriteMgr, mBoard->mParticleMgr);
     mBoard->DrawBullets(g);
 
-    if (mResetFrame != 0)
+    if (mResetFrame != 0 || mResetFrame - mStateCount > 200)
     {
-        if (mResetFrame - mStateCount > 200)
+        mBoard->mGun->SetAngle(((mStateCount * mStateCount) / 2000.0f) + mCurFrogAngle);
+        mBoard->mGun->Draw(g);
+
+        if (mStateCount > 50)
         {
-            mBoard->mGun->SetAngle(((mStateCount * mStateCount) / 2000.0f) + mCurFrogAngle);
-            mBoard->mGun->Draw(g);
-
-            if (mStateCount > 50)
+            int anAlpha = (255 * mStateCount - 50) / 200;
+            if (anAlpha > 0)
             {
-                int anAlpha = (255 * mStateCount - 12750) / 200;
-                if (anAlpha > 0)
-                {
-                    g->SetColorizeImages(true);
-                    g->SetDrawMode(Graphics::DRAWMODE_ADDITIVE);
-                    if (anAlpha > 255)
-                        anAlpha = 255;
+                g->SetColorizeImages(true);
+                g->SetDrawMode(Graphics::DRAWMODE_ADDITIVE);
+                if (anAlpha > 255)
+                    anAlpha = 255;
 
-                    g->SetColor(Color(255, 255, 255, anAlpha));
-                    mBoard->mGun->Draw(g);
-                    g->SetDrawMode(Graphics::DRAWMODE_NORMAL);
-                    g->SetColorizeImages(false);
-                }
+                g->SetColor(Color(255, 255, 255, anAlpha));
+                mBoard->mGun->Draw(g);
+                g->SetDrawMode(Graphics::DRAWMODE_NORMAL);
+                g->SetColorizeImages(false);
             }
         }
     }
@@ -360,7 +387,28 @@ void TransitionMgr::DrawLosing(Graphics *g)
     DrawLetterStamp(g);
 }
 
-void TransitionMgr::DrawTempleComplete(Graphics *g) {}
+void TransitionMgr::DrawTempleComplete(Graphics *g)
+{
+    g->SetColor(Color(0, 0, 50));
+    g->FillRect(0, 0, 640, 480);
+
+    g->SetColor(Color(0xFFFF00));
+    g->SetFont(Sexy::FONT_HUGE);
+
+    mBoard->WriteCenteredLine(g, 120, "CONGRATULATIONS!");
+
+    g->DrawImage(Sexy::IMAGE_GOD_HEAD,
+                 (cos(((mStateCount * SEXY_PI) / 180.0f) * 2) * 5.0f) + 50.0f,
+                 (sin(((mStateCount * SEXY_PI) / 180.0f) * 2) * 5.0f) + 160.0f);
+
+    if (mStateCount > 0)
+    {
+        mBoard->mGun->SetAngle(2 / 3 * SEXY_PI);
+        mBoard->mGun->Draw(g);
+    }
+
+    DrawTextBlurb(g);
+}
 
 void TransitionMgr::Draw(Graphics *g)
 {
@@ -422,8 +470,7 @@ void TransitionMgr::Update()
     switch (mState)
     {
     case TransitionState_LevelBegin:
-        if (mStateCount > mResetFrame)
-            mBoard->StartLevel();
+        UpdateLevelBegin();
         break;
     case TransitionState_Bonus:
         UpdateBonus();
@@ -572,7 +619,8 @@ void TransitionMgr::DoLevelBegin(bool firstTime)
     int aTextTop = mBoard->mHeight - 50;
 
     AddLetterStamp(mBoard->mVerboseLevelString,
-                   aTextLeft, aTextTop, 0xFFFFFF, 20,
+                   aTextLeft, aTextTop, 
+                   0xFFFFFF, 20,
                    Sexy::FONT_HUGE_ID, mResetFrame - 40);
 
     Font *aFont = Sexy::GetFontById(Sexy::FONT_BROWNTITLE_ID);
@@ -583,7 +631,8 @@ void TransitionMgr::DoLevelBegin(bool firstTime)
     AddLetterStamp(mBoard->mLevelDesc->mDisplayName,
                    aTextLeft + aVerbWidth - aSmallWidth,
                    aTextTop + anAscent - anAscentPadding + 4,
-                   0xFFFFFF, 60, Sexy::FONT_BROWNTITLE_ID, mResetFrame - 90);
+                   0xFFFFFF, 60, 
+                   Sexy::FONT_BROWNTITLE_ID, mResetFrame - 90);
 }
 
 void TransitionMgr::DoQuake()
@@ -603,10 +652,6 @@ void TransitionMgr::DoQuake()
 
     IntPoint m2((7 * m1.mX + 3 * m3.mX) / 10, (7 * m1.mY + 3 * m3.mY) / 10);
 
-    printf("m1: %d %d\n", m1.mX, m1.mY);
-    printf("m2: %d %d\n", m2.mX, m2.mY);
-    printf("m3: %d %d\n", m3.mX, m3.mY);
-
     AddFrogMove(m1, m2, 70, 80);
     AddFrogMove(m2, m3, 40, 0);
     AddFrogScale(1.0f, 3.0f, 50, 100);
@@ -624,6 +669,41 @@ void TransitionMgr::DoQuake()
     mStateCount = 0;
 }
 
+void DrawTextParticles(
+    std::string const &theString,
+    int theX,
+    int theY,
+    ParticleMgr *theParticleMgr,
+    int theStagger)
+{
+    Sexy::MemoryImage aImage(gSexyAppBase);
+
+    aImage.Create(Sexy::FONT_HUGE->StringWidth(theString), Sexy::FONT_HUGE->GetHeight());
+    aImage.SetImageMode(true, true);
+
+    Graphics sg(&aImage);
+    sg.SetFont(Sexy::FONT_HUGE);
+    sg.SetColor(Color(0xffffff));
+
+    sg.DrawString(theString, 0, Sexy::FONT_HUGE->GetAscent());
+
+    ulong *aBits = aImage.GetBits();
+
+    for (int i = 0; i < aImage.mHeight; i++)
+    {
+        for (int j = 0; j < aImage.mWidth; j++)
+        {
+            if ((*aBits++ & 0xff000000) == 0xff000000 && (Sexy::Rand() % 50) == 0)
+            {
+                uint color = gBrightBallColors[Sexy::Rand() % MAX_BALL_COLORS];
+                int stagger = theStagger + Sexy::Rand() % 10;
+
+                theParticleMgr->AddSparkle(j + theX, i + theY, 0, 0, 0, 0, stagger, color);
+            }
+        }
+    }
+}
+
 void TransitionMgr::DoStageComplete()
 {
     mBoard->mSoundMgr->AddSound(Sexy::SOUND_STAGE_COMPLETE, 20);
@@ -636,6 +716,7 @@ void TransitionMgr::DoStageComplete()
 
     mStateCount = 0;
     mState = TransitionState_StageComplete;
+    Sexy::Font *aFont = Sexy::FONT_HUGE;
 
     std::string aText;
     if (!mBoard->mPracticeBoard.empty())
@@ -647,42 +728,74 @@ void TransitionMgr::DoStageComplete()
         aText = Sexy::StrFormat("STAGE %d", mBoard->mLevelDesc->mStage + 1);
     }
 
-    int v2 = 0;
+    int aTextWidth = 0;
     for (int i = 0; i < aText.size(); i++)
     {
-        v2 += Sexy::FONT_HUGE->CharWidth(aText[i]);
+        aTextWidth += aFont->CharWidth(aText[i]);
     }
 
-    int v33 = 320 - v2 / 2;
-    int a5 = 20;
-    int v35 = 0;
+    int letX = 320 - aTextWidth / 2;
+    int aFrogStagger = 20;
+    int aLetterStagger = 0;
 
     for (int i = 0; i < aText.size(); i++)
     {
-        char v10 = aText[i];
-        if (v10 == ' ')
+        char aChar = aText[i];
+        if (aChar == ' ')
         {
-            v33 += Sexy::FONT_HUGE->CharWidth(' ');
+            letX += aFont->CharWidth(' ');
         }
         else
         {
             IntPoint m1(mBoard->mGun->GetCenterX(), mBoard->mGun->GetCenterY());
-            IntPoint m2((mBoard->mGun->GetCenterX() + v33) / 2, (mBoard->mGun->GetCenterY() + 250) / 2);
-            IntPoint m3(v33, 250);
+            IntPoint m2((mBoard->mGun->GetCenterX() + letX) / 2, (mBoard->mGun->GetCenterY() + 250) / 2);
+            IntPoint m3(letX, 250);
 
-            AddFrogMove(m1, m2, 20, a5);
-            AddFrogScale(1.0f, 2.0f, 20, a5);
+            AddFrogMove(m1, m2, 20, aFrogStagger);
+            AddFrogScale(1.0f, 2.0f, 20, aFrogStagger);
             AddFrogMove(m2, m3, 15, 0);
             AddFrogScale(2.0f, 1.0f, 15, 0);
 
-            int v11 = v35 + a5;
-            v35 += a5 + 35;
-            int v30 = v10;
+            aLetterStagger += aFrogStagger + 35;
+            aFrogStagger = 0;
 
-            AddLetterStamp(v10, m3.mX, m3.mY - 100, 0xffff00, v35);
+            AddLetterStamp(aChar, m3.mX, m3.mY - 100, 0xffff00, aLetterStagger);
 
-            int v36 = v11 + 43;
+            DrawTextParticles(std::string() + aChar, letX, 150, mBoard->mParticleMgr, aLetterStagger + 8);
+            letX += aFont->CharWidth(aChar);
         }
+    }
+
+    IntPoint em1(mBoard->mGun->GetCenterX(), 250);
+    IntPoint em2(150, 250);
+    IntPoint em3(250, 500);
+    IntPoint em4(320, mBoard->mGun->GetHeight());
+
+    AddFrogMove(em1, em2, 20, 0);
+    mStageCompleteFrame = aLetterStagger + 20;
+    AddFrogMove(em2, em3, 50, 0);
+    AddFrogMove(em3, em4, 30, 0);
+
+    aText = "COMPLETE";
+
+    int aCompWidth = aFont->StringWidth(aText);
+    int v42 = 0;
+    int v28 = 0;
+
+    for (int i = 0; i < 100; i++)
+    {
+        mBoard->mParticleMgr->AddSparkle(
+            (320 - aCompWidth / 2 + v28 / 100),
+            250,
+            0,
+            (Sexy::Rand() % 5) / 10 + 0.25,
+            0,
+            Sexy::Rand() % 50 + 10,
+            (mStageCompleteFrame + v42 / 2) + Sexy::Rand() % 10,
+            gBrightBallColors[Sexy::Rand() % MAX_BALL_COLORS]);
+
+        v42++;
+        v28 += aCompWidth;
     }
 }
 
@@ -717,7 +830,7 @@ void TransitionMgr::DoLevelUp()
     if (!mBoard->IsPracticeMode() && mDoStageUp)
     {
         int aStage = mBoard->mLevelDesc->mStage;
-        if (aStage + 1 == 3 * ((aStage + 1) / 3) || aStage == 12)
+        if ((aStage + 1) % 3 == 0 || aStage == 12)
             mDoTempleUp = true;
     }
 }
@@ -822,6 +935,8 @@ void TransitionMgr::UpdateLetterStamp()
 
 void TransitionMgr::UpdateLevelBegin()
 {
+    if (mStateCount > mResetFrame)
+        mBoard->StartLevel();
 }
 
 void TransitionMgr::UpdateBonus()
@@ -875,20 +990,52 @@ void TransitionMgr::UpdateQuake()
     }
 }
 
-void TransitionMgr::UpdateStageComplete() {}
+void TransitionMgr::UpdateStageComplete()
+{
+    if (mStateCount == mStageCompleteFrame + 50)
+    {
+        Sexy::FONT_HUGE->StringWidth("COMPLETE"); // return ignored??
 
-void TransitionMgr::UpdateTempleComplete() {}
+        for (int i = 0; i < 500; i++)
+        {
+            mBoard->mParticleMgr->AddSparkle(
+                Sexy::Rand() % CIRCLE_WINDOW_WIDTH,
+                Sexy::Rand() % CIRCLE_WINDOW_HEIGHT,
+                0.0f,
+                (Sexy::Rand() % 5) * 0.1f + 0.25f,
+                4,
+                Sexy::Rand() % 50 + 10,
+                Sexy::Rand() % 80 + 10,
+                gBrightBallColors[Sexy::Rand() % MAX_BALL_COLORS]);
+        }
+    }
+    else if (mStateCount == mStageCompleteFrame + 100)
+    {
+        mBoard->mGun->DoBlink(true);
+    }
+
+    if (mStateCount > mStageCompleteFrame + 125)
+        DoQuake();
+}
+
+void TransitionMgr::UpdateTempleComplete()
+{
+    mBoard->mGun->SetPos((sin((mStateCount * SEXY_PI) / 180.0f) * -1.5f) * 5.0f + 120.0f,
+                         (cos((mStateCount * SEXY_PI) / 180.0f) * -1.5f) * 5.0f + 380.0f);
+
+    if (mStateCount > mResetFrame)
+    {
+        mBoard->mContinueButton->SetVisible(true);
+    }
+}
 
 void TransitionMgr::UpdateLosing()
 {
-    if (mResetFrame != 0)
+    if (mResetFrame != 0 || mResetFrame - mStateCount > 200)
     {
-        if (mResetFrame - mStateCount > 200)
+        if ((mStateCount % 30) == 0)
         {
-            if (mStateCount == 30 * (mStateCount / 30))
-            {
-                mBoard->mSoundMgr->AddSound(Sexy::SOUND_TRAIL_LIGHT, 0, 0, mStateCount / 30);
-            }
+            mBoard->mSoundMgr->AddSound(Sexy::SOUND_TRAIL_LIGHT, 0, 0, mStateCount / 30);
         }
     }
 
@@ -909,7 +1056,7 @@ void TransitionMgr::UpdateLosing()
     {
         if (!mResetFrame || mResetFrame - mStateCount > 200)
         {
-            int v4 = (mStateCount / 60 < 6) ? mStateCount / 60 : 5;
+            int v4 = (mStateCount / 60 > 5) ? 5 : mStateCount / 60;
             for (int i = 0; i < v4; i++)
             {
                 float anAngle = ((Sexy::Rand() % 360) * SEXY_PI) / 180.0f;
@@ -928,72 +1075,71 @@ void TransitionMgr::UpdateLosing()
         }
     }
 
-    if (mResetFrame == 0)
+    if (mResetFrame != 0)
     {
-        bool v10 = true;
-
-        for (int i = 0; i < mBoard->mNumCurves; i++)
+        if (mResetFrame == mStateCount)
         {
-            mBoard->mCurveMgr[i]->UpdateLosing();
-            if (!mBoard->mCurveMgr[i]->CanRestart())
+            if (mBoard->mLives <= 0)
             {
-                v10 = false;
-            }
-        }
-
-        if (!v10)
-            return;
-
-        if (mStateCount <= 150)
-            return;
-
-        mResetFrame = mStateCount + 300;
-
-        std::string aText;
-
-        if (mBoard->mLives > 0)
-        {
-            if (mBoard->mLives == 1)
-            {
-                aText = Sexy::StrFormat("LAST LIFE!"); // why is this a StrFormat?
+                mBoard->mApp->DoStatsDialog(true, true);
             }
             else
             {
-                aText = Sexy::StrFormat("%d LIVES LEFT", mBoard->mLives);
+                int aLevelFade = mLevelFade;
+                mBoard->Reset(false, true);
+                mLevelFade = aLevelFade; // ??
+                mTargetLevelFade = 0;
+
+                LevelDesc *aLevelDesc = mBoard->mLevelDesc;
+                IntPoint frogEndPos(aLevelDesc->mGunX, aLevelDesc->mGunY);
+                IntPoint frogStartPos(-100, -100);
+
+                AddFrogMove(frogStartPos, frogEndPos, 50, 0);
+                mBoard->mGun->SetPos(-100, -100);
             }
         }
-        else
-        {
-            aText = "GAME OVER";
-        }
-
-        int len = Sexy::FONT_HUGE->StringWidth(aText);
-        AddLetterStamp(aText, 320 - len / 2, 240, 0xFFFFFF, 110, Sexy::FONT_HUGE_ID, 160);
-        mBoard->mSoundMgr->StopLoop(LoopType_RollOut);
-        mTargetLevelFade = 128;
-        mLevelFadeInc = 2;
         return;
     }
 
-    if (mResetFrame == mStateCount)
+    bool v10 = true;
+
+    for (int i = 0; i < mBoard->mNumCurves; i++)
     {
-        if (mBoard->mLives <= 0)
+        mBoard->mCurveMgr[i]->UpdateLosing();
+        if (!mBoard->mCurveMgr[i]->CanRestart())
         {
-            mBoard->mApp->DoStatsDialog(true, true);
-        }
-        else
-        {
-            mBoard->Reset(false, true);
-            mTargetLevelFade = 0;
-
-            LevelDesc *aLevelDesc = mBoard->mLevelDesc;
-            IntPoint a3(aLevelDesc->mGunX, aLevelDesc->mGunY);
-            IntPoint a2(-100, -100);
-
-            AddFrogMove(a2, a3, 50, 0);
-            mBoard->mGun->SetPos(-100, -100);
+            v10 = false;
         }
     }
+
+    if (!v10)
+        return;
+
+    if (mStateCount <= 150)
+        return;
+
+    mResetFrame = mStateCount + 300;
+
+    std::string aText;
+
+    if (mBoard->mLives <= 0)
+    {
+        aText = "GAME OVER";
+    }
+    else if (mBoard->mLives == 1)
+    {
+        aText = Sexy::StrFormat("LAST LIFE!"); // why is this a StrFormat?
+    }
+    else
+    {
+        aText = Sexy::StrFormat("%d LIVES LEFT", mBoard->mLives);
+    }
+
+    int len = Sexy::FONT_HUGE->StringWidth(aText);
+    AddLetterStamp(aText, 320 - len / 2, 240, 0xFFFFFF, 110, Sexy::FONT_HUGE_ID, 160);
+    mBoard->mSoundMgr->StopLoop(LoopType_RollOut);
+    mTargetLevelFade = 128;
+    mLevelFadeInc = 2;
 }
 
 void TransitionMgr::UpdateTextBlurb()

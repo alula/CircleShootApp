@@ -39,8 +39,8 @@ CircleShootApp::CircleShootApp()
     mWidgetMover = new WidgetMover();
     mWorkerThread = new WorkerThread();
 
-    mWidth = 640;
-    mHeight = 480;
+    mWidth = CIRCLE_WINDOW_WIDTH;
+    mHeight = CIRCLE_WINDOW_HEIGHT;
 
     mAdventureScreen = NULL;
     mBoard = NULL;

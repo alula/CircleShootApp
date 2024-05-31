@@ -26,10 +26,10 @@ MTRand Sexy::gAppRand;
 
 int Sexy::gButtonSequenceCount = 0;
 int Sexy::gLastButtonOver = 4;
-int Sexy::gBallColors[6] = {0x1980FF, 0xFFFF00, 0xFF0000, 0x00FF00, 0xFF00FF, 0xFFFFFF};
-int Sexy::gBrightBallColors[6] = {0x80FFFF, 0xFFFF40, 0xFFAAAA, 0x80FF80, 0xFF80FF, 0xFFFFFF};
-int Sexy::gDarkBallColors[6] = {0x231679, 0x60510A, 0xA00F14, 0x204422, 0x561643, 0x381B22};
-int Sexy::gTextBallColors[6] = {0x2D8BFF, 0xFFFF00, 0xFF0000, 0xFF00, 0xFF00FF, 0xFFFFFF};
+uint Sexy::gBallColors[MAX_BALL_COLORS] = {0x1980FF, 0xFFFF00, 0xFF0000, 0x00FF00, 0xFF00FF, 0xFFFFFF};
+uint Sexy::gBrightBallColors[MAX_BALL_COLORS] = {0x80FFFF, 0xFFFF40, 0xFFAAAA, 0x80FF80, 0xFF80FF, 0xFFFFFF};
+uint Sexy::gDarkBallColors[MAX_BALL_COLORS] = {0x231679, 0x60510A, 0xA00F14, 0x204422, 0x561643, 0x381B22};
+uint Sexy::gTextBallColors[MAX_BALL_COLORS] = {0x2D8BFF, 0xFFFF00, 0xFF0000, 0xFF00, 0xFF00FF, 0xFFFFFF};
 const char *Sexy::gGauntletStages[] = {
     "RABBIT",
     "EAGLE",
