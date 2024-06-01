@@ -184,7 +184,6 @@ Board::~Board()
 
 void Board::StaticLoadProc(void *theData)
 {
-    printf("theData = %p\n", theData);
     ((Board *)theData)->LoadProc();
 }
 
@@ -378,34 +377,9 @@ void Board::DoLevelUp(bool playSounds, bool isCheat)
         mLevelStats.mMaxInARowScore = mCurInARowBonus;
     }
 
-    mNumClearsInARow = 0;
-    mCurInARowBonus = 0;
-    mLevelStats.mTimePlayed += mStateCount;
-    mGameStats.mTimePlayed += mStateCount;
-    mGameStats.mNumBallsCleared += mLevelStats.mNumBallsCleared;
-    mGameStats.mNumGemsCleared += mLevelStats.mNumGemsCleared;
-    mGameStats.mNumCombos += mLevelStats.mNumCombos;
-    mGameStats.mNumGaps += mLevelStats.mNumGaps;
-
-    if (mLevelStats.mMaxCombo > mGameStats.mMaxCombo)
-    {
-        mGameStats.mMaxCombo = mLevelStats.mMaxCombo;
-        mGameStats.mMaxComboScore = mLevelStats.mMaxComboScore;
-    }
-    else if (mLevelStats.mMaxCombo == mGameStats.mMaxCombo)
-    {
-        if (mLevelStats.mMaxComboScore > mGameStats.mMaxComboScore)
-        {
-            mGameStats.mMaxCombo = mLevelStats.mMaxCombo;
-            mGameStats.mMaxComboScore = mLevelStats.mMaxComboScore;
-        }
-    }
-
-    if (mLevelStats.mMaxInARow > mGameStats.mMaxInARow)
-    {
-        mGameStats.mMaxInARow = mLevelStats.mMaxInARow;
-        mGameStats.mMaxInARowScore = mLevelStats.mMaxInARowScore;
-    }
+    ResetInARowBonus();
+    mLevelStats.mTimePlayed = mStateCount;
+    mGameStats.Add(mLevelStats);
 
     mApp->PlaySong(38, false, 0.01);
     DoAccuracy(false);
@@ -422,8 +396,9 @@ void Board::DoLevelUp(bool playSounds, bool isCheat)
     }
 
     DeleteBullets();
+
     if (!mGun->StartFire(false))
-        DeleteBullets();
+        mGun->EmptyBullets();
 
     mGun->CreateCachedGunImage();
     mGameState = GameState_LevelUp;
@@ -541,10 +516,11 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
             mTreasureZoomX = mCurTreasure->x;
             mTreasureZoomY = mCurTreasure->y;
 
-            for (int i = 0; i != 360; i += 36)
+            for (int i = 0; i < 3600; i += 360)
             {
-                float vx = cosf(i * SEXY_PI / 180.0f);
-                float vy = sinf(i * SEXY_PI / 180.0f);
+                int j = i / 10;
+                float vx = cosf(j * SEXY_PI / 180.0f);
+                float vy = sinf(j * SEXY_PI / 180.0f);
                 uint color = gBrightBallColors[Sexy::Rand() % 6];
 
                 mParticleMgr->AddSparkle(mCurTreasure->x + vx * 16.0f, mCurTreasure->y + vx * 16.0f, 2 * vx, 2 * vy, 5, 0, Sexy::Rand() % 5, color);
@@ -553,9 +529,7 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
             mCurTreasure = NULL;
 
             // delete aBullet;
-            BulletList::iterator aDelIterator = theBulletItr;
-            ++theBulletItr;
-            mBulletList.erase(aDelIterator);
+            theBulletItr = mBulletList.erase(theBulletItr);
 
             return;
         }
@@ -568,10 +542,7 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
             if (mCurveMgr[i]->CheckCollision(aBullet))
             {
                 // delete aBullet;
-                BulletList::iterator aDelIterator = theBulletItr;
-                ++theBulletItr;
-                mBulletList.erase(aDelIterator);
-
+                theBulletItr = mBulletList.erase(theBulletItr);
                 return;
             }
         }
@@ -590,19 +561,10 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
     }
     else
     {
-        if (mNumClearsInARow > mLevelStats.mMaxInARow)
-        {
-            mLevelStats.mMaxInARow = mNumClearsInARow;
-            mLevelStats.mMaxInARowScore = mCurInARowBonus;
-        }
+        ResetInARowBonus();
 
-        mNumClearsInARow = 0;
-        mCurInARowBonus = 0;
-
-        // delete aBullet;
-        BulletList::iterator aDelIterator = theBulletItr;
-        ++theBulletItr;
-        mBulletList.erase(aDelIterator);
+        delete aBullet;
+        theBulletItr = mBulletList.erase(theBulletItr);
     }
 }
 
@@ -1027,21 +989,24 @@ void Board::DrawPlaying(Graphics *g)
     DrawBullets(g);
 }
 
-// void Board::DrawLosing(Graphics *g)
-// {
-// }
+void Board::DrawLosing(Graphics *g)
+{
+    mTransitionMgr->Draw(g);
+}
 
-// void Board::DrawLevelUp(Graphics *g)
-// {
-// }
+void Board::DrawLevelUp(Graphics *g)
+{
+    mTransitionMgr->Draw(g);
+}
 
-// void Board::DrawLevelBegin(Graphics *g)
-// {
-// }
+void Board::DrawLevelBegin(Graphics *g)
+{
+    mTransitionMgr->Draw(g);
+}
 
-// void Board::DrawBalls(Graphics *g)
-// {
-// }
+void Board::DrawBalls(Graphics *g)
+{
+}
 
 void Board::DrawBullets(Graphics *g)
 {
@@ -1292,9 +1257,17 @@ void Board::Draw(Graphics *g)
         mApp->mWorkerThread->WaitForTask();
     }
 
-    if (mGameState == GameState_LevelUp || mGameState == GameState_LevelBegin || mGameState == GameState_Losing)
+    if (mGameState == GameState_Losing)
     {
-        mTransitionMgr->Draw(g);
+        DrawLosing(g);
+    }
+    else if (mGameState == GameState_LevelUp)
+    {
+        DrawLevelUp(g);
+    }
+    else if (mGameState == GameState_LevelBegin)
+    {
+        DrawLevelBegin(g);
     }
     else
     {
@@ -1382,6 +1355,8 @@ void Board::MouseDown(int x, int y, int theClickCount)
     }
 }
 
+extern bool gForceStageComplete;
+
 void Board::KeyChar(char theChar)
 {
     char c = toupper(theChar);
@@ -1406,7 +1381,9 @@ void Board::KeyChar(char theChar)
 #if 1
     else if (c == 'P') // TODO THIS IS EXTRA DEBUG FUNCTIONALITY
     {
+        gForceStageComplete = true;
         mScore = mScoreTarget;
+        mCurBarSize = mTargetBarSize;
 
         for (int i = 0; i < mNumCurves; i++)
         {

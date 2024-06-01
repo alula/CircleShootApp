@@ -75,7 +75,7 @@ void Bullet::CheckSetHitBallToPrevBall()
         mHitX = mx;
         mHitY = my;
         mHitPercent = 0.0f;
-        SetBullet(this);
+        SetBallInfo(this);
     }
 }
 

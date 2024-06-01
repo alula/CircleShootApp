@@ -93,15 +93,15 @@ LevelDesc &LevelParser::GetLevel(int theDifficulty, const StringList &theAvoidCu
     std::vector<LevelDesc *> aLevelsDifficulty;
     std::vector<LevelDesc *> aLevelList;
     int aDifficulty = 0;
-	//int i;
     LevelDesc *aLevel = NULL;
 
     for (int i = 0; i < mLevels.size(); ++i)
     {
         LevelDesc *theLevel = &mLevels[i];
 
-		if (!theFindCurve.empty() && theFindCurve.compare(theLevel->mName) != 0) continue;
-        
+        if (!theFindCurve.empty() && theFindCurve.compare(theLevel->mName) != 0)
+            continue;
+
         if (theLevel->mDifficulty > theDifficulty && (aLevel == NULL || aLevel->mDifficulty > theLevel->mDifficulty))
         {
             aLevel = theLevel;
@@ -137,8 +137,7 @@ LevelDesc &LevelParser::GetLevel(int theDifficulty, const StringList &theAvoidCu
 
     if (!aLevelList.empty())
     {
-        int aRnd = Sexy::AppRand();
-		aRnd %= (int)aLevelList.size();
+        int aRnd = Sexy::AppRand() % (int)aLevelList.size();
 
         std::vector<LevelDesc *>::iterator anItr = aLevelList.begin();
 
@@ -482,7 +481,7 @@ bool LevelParser::DoParseLevels()
                 }
                 else if (anElement.mValue == "StageProgression")
                 {
-                    for (int i = 0; i < 14; i++)
+                    for (int i = 0; i < 13; i++)
                     {
                         if (!DoParseStageProgression(anElement, i))
                             return false;
@@ -772,23 +771,11 @@ bool LevelParser::DoParseLevel(XMLElement &theElem, bool isLevel)
 
     if (aDesc.mParTime == 0)
     {
-        aDesc.mParTime = 35 * aDesc.mCurveDesc->mScoreTarget / 1000;
-        int aTimeOffset = 0;
+        aDesc.mParTime = 35 * aDesc.mCurveDesc[0].mScoreTarget / 1000;
 
-        for (int i = 0; i < 3; i++)
+        if (aDesc.GetNumCurves() > 1)
         {
-            aTimeOffset -= (int)aDesc.mCurveDesc[i].mPath.empty() - 1;
-        }
-
-        if (aTimeOffset > 1)
-        {
-            aTimeOffset = 0;
-            for (int i = 0; i < 3; i++)
-            {
-                aTimeOffset -= (int)aDesc.mCurveDesc[i].mPath.empty() - 1;
-            }
-
-            aDesc.mParTime = (int)((float)(aDesc.mParTime) * (aTimeOffset * 0.95f));
+            aDesc.mParTime = aDesc.mParTime * (aDesc.GetNumCurves() * 0.95f);
         }
 
         aDesc.mParTime = 5 * ((aDesc.mParTime + 4) / 5);

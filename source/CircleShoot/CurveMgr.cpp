@@ -1502,14 +1502,15 @@ void CurveMgr::AdvanceBackwardBalls()
         return;
 
     BallList::reverse_iterator anItr = mBallList.rbegin();
+    bool v2 = false;
+    float aBackwardsSpeed = 0.0f;
+
     if (mBackwardCount != 0)
     {
         mBallList.back()->SetBackwardsSpeed(1.0f);
         mBallList.back()->SetBackwardsCount(1);
     }
 
-    bool v2 = false;
-    float aBackwardsSpeed = 0.0f;
     int i = 0;
     for (;;)
     {
@@ -1546,18 +1547,12 @@ void CurveMgr::AdvanceBackwardBalls()
                     continue;
                 }
 
-                if (!aNextBall->GetCollidesWithNext())
-                {
-                    aNextBall->SetCollidesWithNext(true);
-                    mBoard->PlayBallClick(Sexy::SOUND_BALLCLICK1);
-                }
-
+                aNextBall->SetCollidesWithNext(true);
+                v2 = true;
+                mBoard->PlayBallClick(Sexy::SOUND_BALLCLICK1);
                 aBackwardsSpeed = aNextBall->GetWayPoint() - aRadDiff;
                 aNextBall->SetWayPoint(aRadDiff);
             }
-
-            v2 = true;
-            continue;
         }
     }
 
@@ -1804,7 +1799,7 @@ void CurveMgr::AdvanceMergingBullet(BulletList::iterator &theBulletItr)
         int aNumGaps = aBul->GetNumGaps();
 
         delete aBul;
-        mBulletList.erase(theBulletItr++);
+        theBulletItr = mBulletList.erase(theBulletItr);
         mTotalBalls++;
 
         Ball *aPrevBall = aNewBall->GetPrevBall();
@@ -1819,8 +1814,12 @@ void CurveMgr::AdvanceMergingBullet(BulletList::iterator &theBulletItr)
 
         if (aMinGapDist > 0)
         {
-            int v12 = (aMinGapDist - 64 >= 0) ? (300 - (aMinGapDist - 64)) : 300;
-            int aGapBonus = 10 * (v12 * (!mBoard->mIsEndless ? 500 : 250) / 300 / 10);
+            int v22 = aMinGapDist - 64;
+            if (v22 < 0) {
+                aMinGapDist = 0;
+                v22 = 0;
+            }
+            int aGapBonus = 10 * ((300 - v22) * (mBoard->mIsEndless ? 250 : 500) / 300 / 10);
             if (aGapBonus < 10)
             {
                 aGapBonus = 10;

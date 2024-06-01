@@ -202,53 +202,50 @@ void TransitionMgr::DrawLetterStamp(Graphics *g)
         int aPosX = aStamp.mPos.mX - 5;
         int aPosY = aStamp.mPos.mY - aFont->GetAscent();
         int aRem = aStamp.mDuration - aStamp.mUpdateCnt;
-        float aScale = 1.0f;
 
-        if (aStamp.mUpdateCnt >= 30)
+        if (aStamp.mUpdateCnt >= 30 && (aRem < 0 || aRem >= 10))
         {
-            if (aRem > 9)
-            {
-                g->DrawImage(aStamp.mImage, aPosX, aPosY);
-                continue;
-            }
-
-            aScale = (aRem / 20.0f) + 0.5f;
+            g->DrawImage(aStamp.mImage, aPosX, aPosY);
+            continue;
         }
-        else
+
+        float aScale;
+        if (aRem < 0 || aRem >= 10)
         {
-            if (aRem > 9)
+            if (aStamp.mUpdateCnt >= 10)
             {
-                if (aStamp.mUpdateCnt > 9)
-                {
-                    aScale = ((20 - (aStamp.mUpdateCnt - 10)) * 1.1f + (aStamp.mUpdateCnt - 10)) / 20.0f;
-                }
-                else
-                {
-                    aScale = (aStamp.mUpdateCnt * 0.6f) / 10.0f + 0.5f;
-                }
+                int b = aStamp.mUpdateCnt - 10;
+                int a = 20 - b;
+                aScale = (float(a) * 1.1 + float(b)) / 20.0f;
             }
             else
             {
-                aScale = (aRem / 20.0f) + 0.5f;
+                aScale = (aStamp.mUpdateCnt * 0.6f / 10.0f) + 0.5f;
             }
         }
-
-        if (aScale > 0.01f)
+        else
         {
-            int aWidth = aStamp.mImage->mWidth;
-            int aHeight = aStamp.mImage->mHeight;
-
-            Rect aSrc(0, 0, aWidth, aHeight);
-            Rect aDest(aPosX + aWidth / 2 - (aWidth * aScale) / 2,
-                       aPosY + aHeight / 2 - (aHeight * aScale) / 2,
-                       aWidth * aScale,
-                       aHeight * aScale);
-
-            bool isFastStretch = g->GetFastStretch();
-            g->SetFastStretch(!gSexyAppBase->Is3DAccelerated());
-            g->DrawImage(aStamp.mImage, aDest, aSrc);
-            g->SetFastStretch(isFastStretch);
+            aScale = 0.5f + (aRem / 20.0f);
         }
+
+        if (aScale <= 0.01f)
+            continue;
+
+        int aWidth = aStamp.mImage->mWidth;
+        int aHeight = aStamp.mImage->mHeight;
+        int aScaledWidth = aWidth * aScale;
+        int aScaledHeight = aHeight * aScale;
+
+        Rect aSrc(0, 0, aWidth, aHeight);
+        Rect aDest(aPosX + aWidth / 2 - aScaledWidth / 2,
+                   aPosY + aHeight / 2 - aScaledHeight / 2,
+                   aScaledWidth,
+                   aScaledHeight);
+
+        bool isFastStretch = g->GetFastStretch();
+        g->SetFastStretch(!gSexyAppBase->Is3DAccelerated());
+        g->DrawImage(aStamp.mImage, aDest, aSrc);
+        g->SetFastStretch(isFastStretch);
     }
 }
 
@@ -303,7 +300,7 @@ void TransitionMgr::DrawStageCompleteText(Graphics *g)
 
     sg.SetColor(Color(0xFFFF00));
     sg.SetFont(Sexy::FONT_HUGE);
-    sg.DrawString(aText, (CIRCLE_WINDOW_WIDTH - center) / 2, CIRCLE_WINDOW_HEIGHT / 2 + 10);
+    sg.DrawString(aText, (CIRCLE_WINDOW_WIDTH / 2) - (center / 2), CIRCLE_WINDOW_HEIGHT / 2 + 10);
 }
 
 void TransitionMgr::DrawStageComplete(Graphics *g)
@@ -359,14 +356,14 @@ void TransitionMgr::DrawLosing(Graphics *g)
     aDrawer.Draw(g, mBoard->mSpriteMgr, mBoard->mParticleMgr);
     mBoard->DrawBullets(g);
 
-    if (mResetFrame != 0 || mResetFrame - mStateCount > 200)
+    if (mResetFrame == 0 || mResetFrame - mStateCount > 200)
     {
         mBoard->mGun->SetAngle(((mStateCount * mStateCount) / 2000.0f) + mCurFrogAngle);
         mBoard->mGun->Draw(g);
 
         if (mStateCount > 50)
         {
-            int anAlpha = (255 * mStateCount - 50) / 200;
+            int anAlpha = (255 * (mStateCount - 50)) / 200;
             if (anAlpha > 0)
             {
                 g->SetColorizeImages(true);
@@ -376,8 +373,8 @@ void TransitionMgr::DrawLosing(Graphics *g)
 
                 g->SetColor(Color(255, 255, 255, anAlpha));
                 mBoard->mGun->Draw(g);
-                g->SetDrawMode(Graphics::DRAWMODE_NORMAL);
                 g->SetColorizeImages(false);
+                g->SetDrawMode(Graphics::DRAWMODE_NORMAL);
             }
         }
     }
@@ -448,7 +445,7 @@ void TransitionMgr::Update()
 
     if (mLevelFade != mTargetLevelFade)
     {
-        if (mLevelFade >= mLevelFadeInc)
+        if (mLevelFade >= mTargetLevelFade)
         {
             mLevelFade -= mLevelFadeInc;
             if (mLevelFade < mTargetLevelFade)
@@ -619,7 +616,7 @@ void TransitionMgr::DoLevelBegin(bool firstTime)
     int aTextTop = mBoard->mHeight - 50;
 
     AddLetterStamp(mBoard->mVerboseLevelString,
-                   aTextLeft, aTextTop, 
+                   aTextLeft, aTextTop,
                    0xFFFFFF, 20,
                    Sexy::FONT_HUGE_ID, mResetFrame - 40);
 
@@ -631,7 +628,7 @@ void TransitionMgr::DoLevelBegin(bool firstTime)
     AddLetterStamp(mBoard->mLevelDesc->mDisplayName,
                    aTextLeft + aVerbWidth - aSmallWidth,
                    aTextTop + anAscent - anAscentPadding + 4,
-                   0xFFFFFF, 60, 
+                   0xFFFFFF, 60,
                    Sexy::FONT_BROWNTITLE_ID, mResetFrame - 90);
 }
 
@@ -686,6 +683,7 @@ void DrawTextParticles(
     sg.SetColor(Color(0xffffff));
 
     sg.DrawString(theString, 0, Sexy::FONT_HUGE->GetAscent());
+    theY -= Sexy::FONT_HUGE->GetAscent();
 
     ulong *aBits = aImage.GetBits();
 
@@ -735,6 +733,8 @@ void TransitionMgr::DoStageComplete()
     }
 
     int letX = 320 - aTextWidth / 2;
+    int gunCenterX = mBoard->mGun->GetCenterX();
+    int gunCenterY = mBoard->mGun->GetCenterY();
     int aFrogStagger = 20;
     int aLetterStagger = 0;
 
@@ -747,8 +747,8 @@ void TransitionMgr::DoStageComplete()
         }
         else
         {
-            IntPoint m1(mBoard->mGun->GetCenterX(), mBoard->mGun->GetCenterY());
-            IntPoint m2((mBoard->mGun->GetCenterX() + letX) / 2, (mBoard->mGun->GetCenterY() + 250) / 2);
+            IntPoint m1(gunCenterX, gunCenterY);
+            IntPoint m2((gunCenterX + letX) / 2, (gunCenterY + 250) / 2);
             IntPoint m3(letX, 250);
 
             AddFrogMove(m1, m2, 20, aFrogStagger);
@@ -762,14 +762,16 @@ void TransitionMgr::DoStageComplete()
             AddLetterStamp(aChar, m3.mX, m3.mY - 100, 0xffff00, aLetterStagger);
 
             DrawTextParticles(std::string() + aChar, letX, 150, mBoard->mParticleMgr, aLetterStagger + 8);
+            gunCenterX = letX;
+            gunCenterY = 250;
             letX += aFont->CharWidth(aChar);
         }
     }
 
-    IntPoint em1(mBoard->mGun->GetCenterX(), 250);
+    IntPoint em1(gunCenterX, 250);
     IntPoint em2(150, 250);
-    IntPoint em3(250, 500);
-    IntPoint em4(320, mBoard->mGun->GetHeight());
+    IntPoint em3(500, 250);
+    IntPoint em4(320, 250 + mBoard->mGun->GetHeight());
 
     AddFrogMove(em1, em2, 20, 0);
     mStageCompleteFrame = aLetterStagger + 20;
@@ -785,10 +787,10 @@ void TransitionMgr::DoStageComplete()
     for (int i = 0; i < 100; i++)
     {
         mBoard->mParticleMgr->AddSparkle(
-            (320 - aCompWidth / 2 + v28 / 100),
+            ((320 - aCompWidth / 2) + v28 / 100),
             250,
             0,
-            (Sexy::Rand() % 5) / 10 + 0.25,
+            (Sexy::Rand() % 5) / 10.0 + 0.25,
             0,
             Sexy::Rand() % 50 + 10,
             (mStageCompleteFrame + v42 / 2) + Sexy::Rand() % 10,
@@ -852,15 +854,6 @@ void TransitionMgr::MouseDown(int x, int y, int theClickCount)
         mBoard->mSoundMgr->KillAllSounds();
         mBoard->StartLevel();
         break;
-    case TransitionState_Losing:
-        if (mResetFrame > 0)
-        {
-            if (mBoard->mLives > 0)
-            {
-                mBoard->Reset(false, true);
-            }
-        }
-        break;
     case TransitionState_TempleComplete:
         if (mStateCount < mResetFrame)
         {
@@ -869,6 +862,15 @@ void TransitionMgr::MouseDown(int x, int y, int theClickCount)
         }
 
         mBoard->mGun->DoBlink();
+        break;
+    case TransitionState_Losing:
+        if (mResetFrame > 0)
+        {
+            if (mBoard->mLives > 0)
+            {
+                mBoard->Reset(false, true);
+            }
+        }
         break;
     }
 }
@@ -921,14 +923,14 @@ void TransitionMgr::UpdateLetterStamp()
         LetterStamp &aStamp = *anItr;
         aStamp.mUpdateCnt++;
 
-        if (aStamp.mDuration > 0 && aStamp.mUpdateCnt >= aStamp.mDuration)
+        if (aStamp.mDuration <= 0 || aStamp.mUpdateCnt < aStamp.mDuration)
         {
-            LetterStampList::iterator aRemoveItr = anItr++;
-            mLetterStampList.erase(aRemoveItr);
+            anItr++;
         }
         else
         {
-            anItr++;
+            LetterStampList::iterator aRemoveItr = anItr++;
+            mLetterStampList.erase(aRemoveItr);
         }
     }
 }
@@ -994,7 +996,8 @@ void TransitionMgr::UpdateStageComplete()
 {
     if (mStateCount == mStageCompleteFrame + 50)
     {
-        Sexy::FONT_HUGE->StringWidth("COMPLETE"); // return ignored??
+        std::string aText = "COMPLETE";
+        int aCompWidth = Sexy::FONT_HUGE->StringWidth(aText); // return ignored??
 
         for (int i = 0; i < 500; i++)
         {
@@ -1031,7 +1034,7 @@ void TransitionMgr::UpdateTempleComplete()
 
 void TransitionMgr::UpdateLosing()
 {
-    if (mResetFrame != 0 || mResetFrame - mStateCount > 200)
+    if (mResetFrame == 0 || mResetFrame - mStateCount > 200)
     {
         if ((mStateCount % 30) == 0)
         {
@@ -1054,7 +1057,7 @@ void TransitionMgr::UpdateLosing()
 
     if (mStateCount > 75)
     {
-        if (!mResetFrame || mResetFrame - mStateCount > 200)
+        if (mResetFrame == 0 || mResetFrame - mStateCount > 200)
         {
             int v4 = (mStateCount / 60 > 5) ? 5 : mStateCount / 60;
             for (int i = 0; i < v4; i++)
@@ -1101,18 +1104,18 @@ void TransitionMgr::UpdateLosing()
         return;
     }
 
-    bool v10 = true;
+    bool aCanRestart = true;
 
     for (int i = 0; i < mBoard->mNumCurves; i++)
     {
         mBoard->mCurveMgr[i]->UpdateLosing();
         if (!mBoard->mCurveMgr[i]->CanRestart())
         {
-            v10 = false;
+            aCanRestart = false;
         }
     }
 
-    if (!v10)
+    if (!aCanRestart)
         return;
 
     if (mStateCount <= 150)
