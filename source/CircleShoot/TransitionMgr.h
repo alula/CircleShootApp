@@ -5,6 +5,8 @@
 
 #include "CircleCommon.h"
 
+extern bool gForceStageComplete; //Fix broken cheat
+
 namespace Sexy
 {
 

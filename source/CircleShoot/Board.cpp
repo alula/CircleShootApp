@@ -1378,7 +1378,7 @@ void Board::KeyChar(char theChar)
     {
         mSpriteMgr->ToggleSpaceScroll();
     }
-#if 1
+#ifndef RELEASEFINAL
     else if (c == 'P') // TODO THIS IS EXTRA DEBUG FUNCTIONALITY
     {
         gForceStageComplete = true;
@@ -1393,6 +1393,145 @@ void Board::KeyChar(char theChar)
     else if (c == 'O') // TODO THIS IS EXTRA DEBUG FUNCTIONALITY
     {
         SetLosing();
+    }
+    //LHR DEBUG KEY ADDS
+    else if (c == 'B') // Next bullet type, this needs work
+    {
+        mGun->SetNextBulletType(1);
+    }
+    else if (c == 'D') // Draw stats, I like the slide compared to AX but if you don't change the first true to false, A in ZR but D is cooler
+    {
+        mApp->DoStatsDialog(true, false);
+    }
+    else if (c == 'C') // Stripped, thanks Flash ZR
+    {
+        if (gForceTreasure)
+        {
+            gForceTreasure = false;
+        }
+        else
+        {
+            gForceTreasure = true;
+        }
+    }
+    else if (c == 'E') // Extra life from webgames, I like the SFX but if you don't comment those lines
+    {
+        mLives += 1;
+        mLivesBlinkCount = 150;
+        mApp->PlaySample(Sexy::SOUND_EXTRA_LIFE);
+        mSoundMgr->AddSound(Sexy::SOUND_EXTRA_LIFE, 30);
+        mSoundMgr->AddSound(Sexy::SOUND_EXTRA_LIFE, 60);
+    }
+    else if (c == 'F') // Custom add force stage complete
+    {
+        gForceStageComplete = true;
+        Board::DoLevelUp(true, true);
+    }
+    else if (c == 'G') // Game over cheat why not
+    {
+        mLives = 0;
+        Board::SetLosing();
+    }
+    else if (c == 'K') // Kill frog, I like K more
+    {
+        Board::SetLosing();
+    }
+    else if (c == 'L') // Instant win
+    {
+        //Board::IncScore(mScoreTarget - mScore);
+        Board::DoLevelUp(true, true);
+    }
+    else if (c == 'M' || c == '[') // Prev level
+    {
+        if (mLevel > 0)
+        {
+            mStartLevel = mLevel - 1;
+            Board::Reset(false, true);
+        }
+    }
+    else if (c == 'N' || c == ']') // Next level
+    {
+        Board::DoLevelUp(false, true);
+        if (mGameState == GameState_LevelUp)
+        {
+            Board::Reset(false, false);
+        }
+    }
+    else if (c == 'R') // Reset
+    {
+        Board::Reset(false, true);
+    }
+    else if (c == '+') // Score up 1000 from ZR Flash
+    {
+        mScore += 1000;
+        //Board::DoLevelUp(false, true);
+    }
+    /*else if (c == 'U') //AX upsell
+    {
+
+    }*/
+    else if (c == '|') //Speed up
+    {
+        if (gSpeedUp)
+        {
+            gSpeedUp = false;
+        }
+        else
+        {
+            gSpeedUp = true;
+        }
+    }
+    else if (c == 'W') // Lose life from Flash
+    {
+        mLives -= 1;
+        mLivesBlinkCount = 150;
+    }
+    else if (c == 'X') //Toggle collision detection
+    {
+        if (gCheckCollision)
+        {
+            gCheckCollision = false;
+        }
+        else
+        {
+            gCheckCollision = true;
+        }
+    }
+    else if (c == 'Z') // Zuma score
+    {
+        Board::IncScore(mScoreTarget - mScore);
+    }
+    //Shoot is this how you do it uhhh
+    else if (c == '1') // AX explosive ball
+    {
+        mCurveMgr[0]->AddPowerUp(PowerType_Bomb);
+    }
+    else if (c == '2') // AX time ball
+    {
+        mCurveMgr[0]->AddPowerUp(PowerType_SlowDown);
+    }
+    else if (c == '3') // Accuracy ball
+    {
+        mCurveMgr[0]->AddPowerUp(PowerType_Accuracy);
+    }
+    else if (c == '4') // Backwards ball
+    {
+        mCurveMgr[0]->AddPowerUp(PowerType_MoveBackwards);
+    }
+    else if (c == 127) // Delete highlighted ball
+    {
+        //todo
+    }
+    else if (c == 'A') // Color override
+    {
+        if (gColorOverride <= gNumColors)
+        {
+            gColorOverride += 1;
+        }
+        else
+        {
+            gColorOverride = 0;
+        }
     }
 #endif
 }

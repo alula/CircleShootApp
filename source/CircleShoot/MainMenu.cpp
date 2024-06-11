@@ -139,7 +139,7 @@ void MainMenu::ButtonDepress(int theId)
         app->StartAdventureGame(0);
         break;
     case 1:
-        app->ShowPracticeScreeen(true);
+        app->ShowPracticeScreen(true);
         break;
     case 2:
         app->DoOptionsDialog();
@@ -149,6 +149,9 @@ void MainMenu::ButtonDepress(int theId)
         break;
     case 4:
         app->DoConfirmQuitDialog();
+        break;
+    case 5:
+        app->DoUserDialog();
         break;
     default:
         break;

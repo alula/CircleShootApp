@@ -77,7 +77,7 @@ CircleShootApp::~CircleShootApp()
     delete mWidgetMover;
     delete mWorkerThread;
 
-    // mResourceManager->DeleteResources("");
+    //mResourceManager->DeleteResources("");
 }
 
 void CircleShootApp::Init()
@@ -361,6 +361,22 @@ bool CircleShootApp::CheckSaveGame(bool showConfirm)
 
 void CircleShootApp::StartSavedGame(bool showConfirm)
 {
+    //WIP
+    MakeBoard();
+    //Board::LoadGame()
+    //Buffer::Clear()
+    if (!showConfirm)
+    {
+        if (mProfile->mShowHelpScreen)
+        {
+            ShowHelpScreen();
+        }
+        else
+        {
+            //DoGetReadyDialog();
+        }
+    }
+    PlaySong(0, 1, 0.01);
 }
 
 void CircleShootApp::SaveProfile()
@@ -483,7 +499,7 @@ void CircleShootApp::FinishStatsDialog()
     }
     else if (!mBoard->IsPracticeMode())
     {
-        ShowPracticeScreeen(false);
+        ShowPracticeScreen(false);
     }
     else if (!mBoard->IsWinning())
     {
@@ -499,6 +515,30 @@ void CircleShootApp::FinishStatsDialog()
     }
 }
 
+void CircleShootApp::FinishConfirmMainMenuDialog(bool a2)
+{
+    //WIP
+    KillDialog(DialogType_ConfirmMainMenu);
+}
+
+void CircleShootApp::FinishNeedRegisterDialog(bool a2)
+{
+    //WIP
+    /*if (a2)
+        CircleShootApp::DoRegisterDialog();
+    KillDialog(DialogType_Register);*/
+}
+
+void CircleShootApp::FinishGetReadyDialog(bool saveSettings)
+{
+    //WIP
+    if (mBoard)
+    {
+        mBoard->Pause(false, true);
+    }
+    KillDialog(DialogType_GetReady);
+}
+
 void CircleShootApp::FinishConfirmQuitDialog(bool quit)
 {
     KillDialog(DialogType_ConfirmQuit);
@@ -507,6 +547,26 @@ void CircleShootApp::FinishConfirmQuitDialog(bool quit)
     {
         Shutdown();
     }
+}
+
+void CircleShootApp::FinishConfirmContinueDialog(bool a2)
+{
+    //WIP
+    /*KillDialog(DialogType_ConfirmContinue);
+    GetSaveGameName(?, ?);
+    EraseFile(?);
+    if (a2)
+    {
+        StartSavedGame(false);
+    }
+    else if (?)
+    {
+        ShowPracticeScreen(false);
+    }
+    else
+    {
+        ShowAdventureScreen(false, false);
+    }*/
 }
 
 void CircleShootApp::DoStatsDialog(bool slide, bool doCounter)
@@ -534,6 +594,58 @@ void CircleShootApp::DoStatsDialog(bool slide, bool doCounter)
 
 void CircleShootApp::DoCreateUserDialog()
 {
+    //WIP
+    /*CreateUserDialog* dialog = new CreateUserDialog(mBoard != NULL);
+    SetupDialog(dialog, 400);
+    AddDialog(DialogType_CreateUser, dialog);*/
+}
+
+void CircleShootApp::DoConfirmCheckForUpdatesDialog()
+{
+    //WIP
+    /*CreateUserDialog* dialog = new CreateUserDialog(mBoard != NULL);
+    SetupDialog(dialog, 400);
+    AddDialog(DialogType_ConfirmCheckForUpdates, dialog);*/
+}
+
+void CircleShootApp::DoUserDialog()
+{
+    /*UserDialog* aDialog = new UserDialog(aScroll);
+    SetupDialog(aDialog, 400);
+    AddDialog(DialogType_User, aDialog);*/
+    Popup("CircleShootApp::DoUserDialog has not been decompiled yet.");
+}
+
+void CircleShootApp::DoRenameUserDialog()
+{
+    //WIP
+    /*CreateUserDialog* aDialog = new CreateUserDialog(mBoard, doCounter);
+    SetupDialog(aDialog, 400);
+    AddDialog(DialogType_RenameUser, aDialog);*/
+    Popup("CircleShootApp::DoRenameUserDialog has not been decompiled yet.");
+}
+
+void CircleShootApp::DoConfirmContinueDialog()
+{
+    //WIP
+}
+
+void CircleShootApp::DoNextTempleDialog()
+{
+    //WIP
+    DoDialog(DialogType_NextTemple, true, "Enter Next Temple", "You are now going to enter the next temple.\nGet Ready!", "", Dialog::BUTTONS_OK_CANCEL);
+}
+
+void CircleShootApp::DoConfirmDeleteUserDialog()
+{
+    //WIP
+    DoDialog(DialogType_ConfirmDeleteUser, true, "Are You Sure?", "This will permanently remove '%s' from the player roster!", "", Dialog::BUTTONS_YES_NO);
+}
+
+void CircleShootApp::DoConfirmMainMenuDialog()
+{
+    //WIP
+    DoDialog(DialogType_ConfirmMainMenu, true, "Leave", "Your game session will be saved upon leaving.  Do you want to continue?", "", Dialog::BUTTONS_YES_NO);
 }
 
 void CircleShootApp::DoConfirmQuitDialog()
@@ -600,7 +712,7 @@ void CircleShootApp::FinishOptionsDialog(bool saveSettings)
             ClearUpdateBacklog();
         }
 
-        KillDialog(0);
+        KillDialog(DialogType_Options);
         if (mBoard)
         {
             mBoard->Pause(false, true);
@@ -753,7 +865,7 @@ void CircleShootApp::ShowMainMenu()
     ClearUpdateBacklog();
 }
 
-void CircleShootApp::ShowPracticeScreeen(bool a2)
+void CircleShootApp::ShowPracticeScreen(bool a2)
 {
     mUnk35 = true;
     if (!a2 || !CheckSaveGame(true))
@@ -781,4 +893,5 @@ void CircleShootApp::ShowPracticeScreeen(bool a2)
 
 void CircleShootApp::ShowMoreGamesScreen()
 {
+    Popup("CircleShootApp::ShowMoreGamesScreen has not been decompiled yet.");
 }
