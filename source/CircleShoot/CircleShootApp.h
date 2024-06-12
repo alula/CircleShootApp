@@ -14,6 +14,7 @@ namespace Sexy
     class LevelParser;
     class LoadingScreen;
     class MainMenu;
+    class AdventureScreen;
     class PracticeScreen;
     class ProfileMgr;
     class HighScoreMgr;
@@ -27,7 +28,7 @@ namespace Sexy
         Board *mBoard;
         MainMenu *mMainMenu;
         PracticeScreen *mPracticeScreen;
-        Widget *mAdventureScreen;
+        AdventureScreen *mAdventureScreen;
         Widget *mHelpScreen;
         Widget *mMoreGamesScreen;
         LoadingScreen *mLoadingScreen;
@@ -37,12 +38,11 @@ namespace Sexy
         ProfileMgr *mProfileMgr;
         HighScoreMgr *mHighScoreMgr;
         UserProfile *mProfile;
-        Buffer mUnk17;
-
+        Buffer mSaveGameBuffer;
+        bool mDidNextTempleDialog;
+        int mSongId;
         int mLastSong;
         int mLastSongSwitchTime;
-        int mSongId;
-        bool mUnk24;
         int mUnk28;
         int mUnk29;
         bool mUnk30;
@@ -50,7 +50,8 @@ namespace Sexy
         int mMaxExecutions;
         int mMaxPlays;
         int mMaxTime;
-        bool mUnk35;
+        bool mIsPractice;
+        int mUnk36;
 
         CircleShootApp();
         virtual ~CircleShootApp();
@@ -78,23 +79,32 @@ namespace Sexy
         void LoadingThreadProc();
         void LoadingThreadCompleted();
 
-        void FinishStatsDialog();
-        void DoStatsDialog(bool a1, bool a2);
-
-        void DoCreateUserDialog();
-        void DoConfirmQuitDialog();
-
         void SwitchSong(int id);
-
         void PlaySong(int id, bool fade, double fadeSpeed);
 
+        void DoConfirmQuitDialog();
+        void DoCreateUserDialog();
+        void DoNextTempleDialog();
         void DoOptionsDialog();
-        void FinishOptionsDialog(bool a2);
+        void DoStatsDialog(bool a1, bool a2);
+
         void FinishConfirmQuitDialog(bool quit);
+        void FinishCreateUserDialog(bool a2);
+        void FinishRenameUserDialog(bool a2);
+        void FinishNeedRegisterDialog(bool a2);
+        void FinishRegisterDialog(bool a2);
+        void FinishNextTempleDialog(bool save);
+        void FinishConfirmContinueDialog(bool a2);
+        void FinishGetReadyDialog();
+        void FinishOptionsDialog(bool a2);
+        void FinishConfirmMainMenuDialog(bool a2);
+        void FinishStatsDialog(bool a2);
+
         bool CheckYesNoButton(int theButton);
 
         void ShowMainMenu();
-        void ShowPracticeScreeen(bool a2);
+        void ShowAdventureScreen(bool fromMenu, bool revealTemple);
+        void ShowPracticeScreeen(bool fromMenu);
         void ShowMoreGamesScreen();
     };
 

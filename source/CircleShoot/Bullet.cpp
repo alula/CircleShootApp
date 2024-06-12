@@ -27,7 +27,6 @@ Bullet::~Bullet()
     SetBallInfo(NULL);
 }
 
-// this method is inlined in executable
 void Bullet::SetBallInfo(Bullet *theBullet)
 {
     if (mHitBall != NULL)
@@ -91,10 +90,7 @@ void Bullet::Update()
     {
         mx += mVelX;
         my += mVelY;
-        return;
-    }
-
-    if (mClearCount == 0)
+    } else if (mClearCount == 0)
     {
         mHitPercent += mMergeSpeed;
         if (mHitPercent > 1.0f)
@@ -102,8 +98,8 @@ void Bullet::Update()
             mHitPercent = 1.0f;
         }
 
-        mx = mHitX + (mDestX - mHitX) * mHitPercent;
-        my = mHitY + (mDestY - mHitY) * mHitPercent;
+        mx = mHitX + mHitPercent * (mDestX - mHitX);
+        my = mHitY + mHitPercent * (mDestY - mHitY);
     }
 }
 
@@ -120,15 +116,9 @@ Ball *Bullet::GetPushBall()
         return NULL;
     }
 
-    Ball *aPushBall = mHitBall;
-    if (mHitInFront)
-    {
-        aPushBall = aPushBall->GetNextBall();
-        if (aPushBall == NULL)
-            return NULL;
-    }
+    Ball *aPushBall = !mHitInFront ? mHitBall : mHitBall->GetNextBall();
 
-    if (aPushBall->CollidesWithPhysically(this))
+    if (aPushBall != NULL && aPushBall->CollidesWithPhysically(this))
     {
         return aPushBall;
     }
@@ -172,7 +162,19 @@ bool Bullet::AddGapInfo(int theCurve, int theDist, int theBallId)
     return true;
 }
 
-// int Bullet::GetCurGapBall(int theCurveNum) {}
+int Bullet::GetCurGapBall(int theCurveNum) {
+    int aCurGapBall = 0;
+
+    for (GapInfoVector::iterator i = mGapInfo.begin(); i != mGapInfo.end(); i++)
+    {
+        if (i->mCurve == theCurveNum)
+        {
+            aCurGapBall = i->mBallId;
+        }
+    }
+
+    return aCurGapBall;
+}
 
 int Bullet::GetMinGapDist()
 {
@@ -195,7 +197,7 @@ void Bullet::RemoveGapInfoForBall(int theBallId)
     {
         if (i->mBallId == theBallId)
         {
-            mGapInfo.erase(i++);
+            i = mGapInfo.erase(i);
         }
         else
         {

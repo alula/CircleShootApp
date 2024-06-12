@@ -7,32 +7,35 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     set(BITNESS "32")
 endif()
 
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules" )
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules" )
 add_definitions(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-IF(MSVC)
-    add_definitions(-D_USE_MATH_DEFINES)
-    add_definitions(-DNOMINMAX)
-
-    IF (CMAKE_CXX_FLAGS MATCHES "sanitize=address")
-        message(STATUS "ASAN detected, switching to non-debug runtime library.")
+if(MSVC)
+    message(STATUS "MSVC Version: ${MSVC_VERSION}")
+    if (MSVC_VERSION EQUAL 1300)
+        # /Og /Ob1 /Oi /Ot /I "Z:\alula\workspace\zuma-decomp\\sexy-windows" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_USE_MATH_DEFINES" /D "_MBCS" /GF /FD /EHsc /MT /GS /Gy /GR /Fo"Release/" /Fd"Release/vc70.pdb" /W3 /c /Wp64 /Zi /TP
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GF /EHsc /GS /Gy /GR /W3 /c /Wp64 /Z7 /TP")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Og /Ob1 /Oi /Ot /Oy-")
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
-    ENDIF()
-ENDIF()
+    else()
+        add_definitions(-DNOMINMAX)
+
+        if(CMAKE_CXX_FLAGS MATCHES "sanitize=address")
+            message(STATUS "ASAN detected, switching to non-debug runtime library.")
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+        endif()
+    endif()
+
+    add_definitions(-D_USE_MATH_DEFINES)
+endif()
 
 # Use BASS 2.0 on 64-bit platform
-IF(NOT WIN32 OR BITNESS STREQUAL "64")
+if(NOT WIN32 OR BITNESS STREQUAL "64")
     message(STATUS "Using BASS 2.x")
     add_definitions(-DBASS2)
-ENDIF()
+endif()
 
-FIND_PACKAGE(DirectX REQUIRED)
-
-set(SEXYAPP_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/source)
-
-add_subdirectory(source/ImageLib)
-add_subdirectory(source/PakLib)
-add_subdirectory(source/SexyAppFramework)
+add_subdirectory(sexy-windows)
 add_subdirectory(source/CircleShoot)

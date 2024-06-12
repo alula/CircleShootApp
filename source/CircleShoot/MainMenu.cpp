@@ -136,7 +136,7 @@ void MainMenu::ButtonDepress(int theId)
     switch (theId)
     {
     case 0:
-        app->StartAdventureGame(0);
+        app->ShowAdventureScreen(true, false);
         break;
     case 1:
         app->ShowPracticeScreeen(true);

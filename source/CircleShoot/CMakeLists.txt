@@ -1,6 +1,7 @@
 project(CircleShoot LANGUAGES CXX)
 
 add_executable(Zuma WIN32
+    AdventureScreen.cpp
     Ball.cpp
     BlendedImage.cpp
     Board.cpp
@@ -39,6 +40,10 @@ target_include_directories(Zuma PRIVATE
 
 if(MSYS OR MINGW)
     target_link_libraries(Zuma -static-libgcc -static-libstdc++)
+endif()
+
+if(MSVC AND MSVC_VERSION EQUAL 1300)
+    target_link_options(Zuma PRIVATE /INCREMENTAL:NO /DEBUG /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /MACHINE:IX86 /pdb:${CMAKE_CURRENT_BINARY_DIR}/Zuma.pdb)
 endif()
 
 target_link_libraries(Zuma SexyAppFramework)

@@ -207,14 +207,16 @@ bool Gun::StartFire(bool recoil)
 
 Bullet *Gun::GetFiredBullet()
 {
-    if (mState != GunState_Firing || mStatePercent < 1.0f)
-        return NULL;
+    if (mState == GunState_Firing && mStatePercent >= 1)
+    {
+        Bullet *aBullet = mBullet;
+        mBullet = NULL;
+        mState = GunState_Normal;
 
-    Bullet *aBullet = mBullet;
-    mBullet = NULL;
-    mState = GunState_Normal;
+        return aBullet;
+    }
 
-    return aBullet;
+    return NULL;
 }
 
 void Gun::SetPos(int theX, int theY)

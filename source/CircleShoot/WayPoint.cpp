@@ -91,19 +91,20 @@ void WayPointMgr::SetWayPointInt(Ball *theBall, int thePoint)
 
 void WayPointMgr::FindFreeWayPoint(Ball *theExistingBall, Ball *theNewBall, bool inFront, int thePad)
 {
-    int aWayPoint = theExistingBall->GetWayPoint();
-    bool v7 = inFront
-                  ? (theNewBall->GetWayPoint() <= aWayPoint)
-                  : (theNewBall->GetWayPoint() >= aWayPoint);
-
-    if (!v7)
+    int aItr = !inFront ? -1 : 1;
+    int aWayPoint = (int)theExistingBall->GetWayPoint();
+    
+    if (inFront && theExistingBall->GetWayPoint() < theNewBall->GetWayPoint())
+    {
+        aWayPoint = (int)theNewBall->GetWayPoint();
+    } else if (theExistingBall->GetWayPoint() > theNewBall->GetWayPoint())
     {
         aWayPoint = (int)theNewBall->GetWayPoint();
     }
 
     while (aWayPoint >= 0)
     {
-        if (aWayPoint >= mWayPoints.size())
+        if (aWayPoint >= (int)mWayPoints.size())
         {
             break;
         }
@@ -115,7 +116,7 @@ void WayPointMgr::FindFreeWayPoint(Ball *theExistingBall, Ball *theNewBall, bool
             break;
         }
 
-        aWayPoint += !inFront ? -1 : 1;
+        aWayPoint += aItr;
     }
 
     SetWayPointInt(theNewBall, aWayPoint);

@@ -46,7 +46,7 @@ PracticeScreen::PracticeScreen()
 	mDifficulty = ((CircleShootApp *)gSexyAppBase)->mProfile->mPracticeDifficulty;
 	mCurrentDoor = 0;
 	mHighlightDoor = -1;
-	mGem = 0;
+	mMaxStage = 0;
 	mLastClickCnt = 0;
 
 	IntPoint aDoors[12] = {
@@ -65,16 +65,16 @@ PracticeScreen::PracticeScreen()
 
 	for (int i = 0; i < 4; i++)
 	{
-		mDoors[i].mImage = (MemoryImage *)Sexy::GetImageById((ResourceId)(i + Sexy::IMAGE_GAUNTDOOR1_ID));
-		int aWidth = mDoors[i].mImage->mWidth;
+		mDoorInfo[i].mImage = (MemoryImage *)Sexy::GetImageById((ResourceId)(i + Sexy::IMAGE_GAUNTDOOR1_ID));
+		int aWidth = mDoorInfo[i].mImage->mWidth;
 		if (aWidth < -0)
 		{
 			aWidth += 3;
 		}
-		mDoors[i].mRect.mHeight = mDoors[i].mImage->mHeight;
-		mDoors[i].mRect.mWidth = aWidth >> 2;
-		mDoors[i].mRect.mY = aDoors[i].mY;
-		mDoors[i].mRect.mX = aDoors[i].mX;
+		mDoorInfo[i].mRect.mHeight = mDoorInfo[i].mImage->mHeight;
+		mDoorInfo[i].mRect.mWidth = aWidth >> 2;
+		mDoorInfo[i].mRect.mY = aDoors[i].mY;
+		mDoorInfo[i].mRect.mX = aDoors[i].mX;
 	}
 
 	mLocked = false;
@@ -99,16 +99,16 @@ void PracticeScreen::Update()
 	}
 }
 
-void PracticeScreen::Resize(int theX, int theY, int theWidth, int theHeight)
+void PracticeScreen::Resize(int x, int y, int theWidth, int theHeight)
 {
-	Widget::Resize(theX, theY, theWidth, theHeight);
+	Widget::Resize(x, y, theWidth, theHeight);
 
-	mBackButton->Resize(theX + 177, theY + 444, mBackButton->mWidth, mBackButton->mHeight);
-	mGauntPlayButton->Resize(theX + 277, theY + 444, mGauntPlayButton->mWidth, mGauntPlayButton->mHeight);
-	mNextButton->Resize(theX + 390, theY + 444, mNextButton->mWidth, mNextButton->mHeight);
-	mMainMenuButton->Resize(theX + 10, theY + 422, mMainMenuButton->mWidth, mMainMenuButton->mHeight);
-	mSurvivalButton->Resize(theX + 506, theY + 413, mSurvivalButton->mWidth, mSurvivalButton->mHeight);
-	mPracticeButton->Resize(theX + 505, theY + 446, mPracticeButton->mWidth, mPracticeButton->mHeight);
+	mBackButton->Resize(x + 177, y + 444, mBackButton->mWidth, mBackButton->mHeight);
+	mGauntPlayButton->Resize(x + 277, y + 444, mGauntPlayButton->mWidth, mGauntPlayButton->mHeight);
+	mNextButton->Resize(x + 390, y + 444, mNextButton->mWidth, mNextButton->mHeight);
+	mMainMenuButton->Resize(x + 10, y + 422, mMainMenuButton->mWidth, mMainMenuButton->mHeight);
+	mSurvivalButton->Resize(x + 506, y + 413, mSurvivalButton->mWidth, mSurvivalButton->mHeight);
+	mPracticeButton->Resize(x + 505, y + 446, mPracticeButton->mWidth, mPracticeButton->mHeight);
 }
 
 void PracticeScreen::AddedToManager(WidgetManager *theWidgetManager)
@@ -208,19 +208,19 @@ void PracticeScreen::Draw(Graphics *g)
 		{
 			aFrame = 2;
 		}
-		if (i == mGem)
+		if (i == mMaxStage)
 		{
 			if (((mGauntletBlinkCount >> 4) & 1) != 0)
 			{
 				aFrame = 2;
 			}
 		}
-		else if (i > mGem)
+		else if (i > mMaxStage)
 		{
 			aFrame = 0;
 		}
 
-		g->DrawImageCel(mDoors[i].mImage, mDoors[i].mRect.mX, mDoors[i].mRect.mY, aFrame);
+		g->DrawImageCel(mDoorInfo[i].mImage, mDoorInfo[i].mRect.mX, mDoorInfo[i].mRect.mY, aFrame);
 	}
 
 	g->SetColor(Color(0xFFFFFF));
@@ -238,7 +238,7 @@ void PracticeScreen::Draw(Graphics *g)
 				  150 + (mThumbnail->mWidth - Sexy::FONT_MAIN10OUTLINE->StringWidth(aText)),
 				  260);
 
-	if (mGem > 2)
+	if (mMaxStage > 2)
 	{
 		int aPosX = 560 - Sexy::IMAGE_SUNGLOW->mWidth / 2;
 		int aPosY = 220 - (Sexy::IMAGE_SUNGLOW->mHeight + Sexy::IMAGE_GAUNTSUNGEM->mHeight) / 2;
@@ -268,7 +268,7 @@ void PracticeScreen::Draw(Graphics *g)
 		g->SetColorizeImages(false);
 	}
 
-	switch (mGem)
+	switch (mMaxStage)
 	{
 	case 1:
 		g->DrawImage(Sexy::IMAGE_GAUNTEAGLEGEM, 560 - Sexy::IMAGE_GAUNTEAGLEGEM->mWidth / 2, 220 - Sexy::IMAGE_GAUNTEAGLEGEM->mHeight);
@@ -441,30 +441,29 @@ MemoryImage *PracticeScreen::CreateGradientImage(std::string const &theName, int
 	return anImage;
 }
 
-int PracticeScreen::GetDoorAt(int theX, int theY)
+int PracticeScreen::GetDoorAt(int x, int y)
 {
-	int i;
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
-		Door &aDoor = mDoors[i];
-		if (mGem >= i && theX >= aDoor.mRect.mX &&
-			theX < aDoor.mRect.mX + aDoor.mRect.mWidth &&
-			theY >= aDoor.mRect.mY &&
-			theY < aDoor.mRect.mY + aDoor.mRect.mHeight)
-		{
-			int aPosX = theX - aDoor.mRect.mX;
-			int aPosY = theY - aDoor.mRect.mY;
+		if (i > mMaxStage)
+			break;
 
-			uint *aBits = (uint*)aDoor.mImage->GetBits();
-			if ((aBits[aPosX + aPosY * aDoor.mImage->GetWidth()] & 0xff000000) != 0)
-				break;
+		if (mDoorInfo[i].mRect.Contains(x, y))
+		{
+			Sexy::MemoryImage *anImage = mDoorInfo[i].mImage;
+
+			int aX = x - mDoorInfo[i].mRect.mX;
+			int aY = y - mDoorInfo[i].mRect.mY;
+			int aWidth = anImage->GetWidth();
+
+			if ((anImage->GetBits()[aX + aY * aWidth] & 0xFF000000) != 0)
+			{
+				return i;
+			}
 		}
 	}
 
-	if (i == 4)
-		return -1;
-
-	return i;
+	return -1;
 }
 
 MemoryImage *PracticeScreen::GetThumbnail(std::string const &theName)
@@ -528,30 +527,30 @@ void PracticeScreen::LoadBoard()
 
 	if (anItr == aProfile->mMaxBoardLevel.end())
 	{
-		mGem = -1;
+		mMaxStage = -1;
 		aUnlocked = false;
 	}
 	else
 	{
-		mGem = anItr->second / 7;
-		if (mGem > 3)
+		mMaxStage = anItr->second / 7;
+		if (mMaxStage > 3)
 
-			mGem = 3;
+			mMaxStage = 3;
 
 		aUnlocked = true;
 	}
 
 	mCurrentDoor = mDifficulty >= 0 ? mDifficulty : 0;
-	if (mCurrentDoor > mGem)
+	if (mCurrentDoor > mMaxStage)
 	{
-		mCurrentDoor = mGem;
+		mCurrentDoor = mMaxStage;
 	}
 
 	mHighlightDoor = -1;
 
 	if (gUnlocked)
 	{
-		mGem = 3;
+		mMaxStage = 3;
 		aUnlocked = true;
 	}
 

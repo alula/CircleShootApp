@@ -16,6 +16,7 @@
 #include "MainMenu.h"
 #include "OptionsDialog.h"
 #include "StatsDialog.h"
+#include "AdventureScreen.h"
 #include "PracticeScreen.h"
 #include "LevelParser.h"
 #include "ProfileMgr.h"
@@ -229,7 +230,7 @@ Dialog *CircleShootApp::NewDialog(int theDialogId,
 
 void CircleShootApp::MakeBoard()
 {
-    mUnk24 = false;
+    mDidNextTempleDialog = false;
     CleanupWidgets();
 
     mBoard = new Board(this);
@@ -321,7 +322,7 @@ void CircleShootApp::ShowHelpScreen()
 
 void CircleShootApp::StartAdventureGame(int theStage)
 {
-    if (mUnk24 && theStage == mProfile->mMaxStage && CheckSaveGame(false))
+    if (mDidNextTempleDialog && theStage == mProfile->mMaxStage && CheckSaveGame(false))
     {
         StartSavedGame(true);
     }
@@ -378,7 +379,7 @@ void CircleShootApp::LoadingThreadProc()
 
     mUnk28 = 0;
     mNumLoadingThreadTasks = 0;
-	int i;
+    int i;
 
     for (i = 0; i < 5; i++)
     {
@@ -403,7 +404,7 @@ void CircleShootApp::LoadingThreadProc()
         }
 
         ++mUnk28;
-		++i;
+        ++i;
 
         if (i == 5)
         {
@@ -464,14 +465,13 @@ void CircleShootApp::LoadingThreadProc()
 
 void CircleShootApp::LoadingThreadCompleted()
 {
-
     if (ShouldCheckForUpdate())
     {
         DoConfirmCheckForUpdatesDialog();
     }
 }
 
-void CircleShootApp::FinishStatsDialog()
+void CircleShootApp::FinishStatsDialog(bool)
 {
     KillDialog(DialogType_Stats);
     if (mBoard == NULL)
@@ -481,17 +481,17 @@ void CircleShootApp::FinishStatsDialog()
     {
         mBoard->Pause(false, true);
     }
-    else if (!mBoard->IsPracticeMode())
+    else if (mBoard->IsPracticeMode())
     {
         ShowPracticeScreeen(false);
     }
     else if (!mBoard->IsWinning())
     {
-        // ShowAdventureScreen(false, false);
+        ShowAdventureScreen(false, false);
     }
     else if (mBoard->GetCurrentStage() < 12)
     {
-        // ShowAdventureScreen(false, true);
+        ShowAdventureScreen(false, true);
     }
     else
     {
@@ -529,6 +529,26 @@ void CircleShootApp::DoStatsDialog(bool slide, bool doCounter)
             aDialog->mX,
             aDialog->mY,
             false);
+    }
+}
+
+void CircleShootApp::DoNextTempleDialog()
+{
+    mDidNextTempleDialog = true;
+    DoDialog(DialogType_NextTemple, true, "Enter Next Temple", "You are now going to enter the next temple.\nGet Ready!", "", Dialog::BUTTONS_OK_CANCEL);
+}
+
+void CircleShootApp::FinishNextTempleDialog(bool save)
+{
+    KillDialog(DialogType_NextTemple);
+
+    if (save && CheckSaveGame(false))
+    {
+        StartSavedGame(true);
+    }
+    else if (mAdventureScreen)
+    {
+        mWidgetManager->SetFocus(mAdventureScreen);
     }
 }
 
@@ -641,13 +661,13 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishConfirmContinueDialog(true);
             return true;
         case 2014:
-            FinishStatsDialog();
+            FinishStatsDialog(true);
             return true;
         case 2015:
             // FinishGetReadyDialog(true);
             return true;
         case 2016:
-            // FinishNextTempleDialog(true, 1);
+            FinishNextTempleDialog(true);
             return true;
         case 2017:
             // FinishRegisterDialog(true);
@@ -691,10 +711,10 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishConfirmContinueDialog(false);
             return true;
         case 3014:
-            FinishStatsDialog();
+            FinishStatsDialog(false);
             return true;
         case 3016:
-            // FinishNextTempleDialog(false, 1);
+            FinishNextTempleDialog(false);
             return true;
         case 3017:
             // FinishRegisterDialog(false);
@@ -753,30 +773,62 @@ void CircleShootApp::ShowMainMenu()
     ClearUpdateBacklog();
 }
 
-void CircleShootApp::ShowPracticeScreeen(bool a2)
+void CircleShootApp::ShowAdventureScreen(bool fromMenu, bool revealTemple)
 {
-    mUnk35 = true;
-    if (!a2 || !CheckSaveGame(true))
+    mIsPractice = false;
+    if (fromMenu && CheckSaveGame(true))
+        return;
+
+    MainMenu *aMainMenu = mMainMenu;
+    mWidgetMover->DelayDeleteWidget(mMainMenu);
+    mMainMenu = NULL;
+
+    CleanupWidgets();
+
+    mAdventureScreen = new AdventureScreen();
+    mAdventureScreen->Resize(0, 0, mWidth, mHeight);
+    mWidgetManager->AddWidget(mAdventureScreen);
+    mWidgetManager->SetFocus(mAdventureScreen);
+
+    if (revealTemple)
     {
-        MainMenu *aMainMenu = mMainMenu;
-        mWidgetMover->DelayDeleteWidget(mMainMenu);
-        mMainMenu = NULL;
-
-        CleanupWidgets();
-
-        mPracticeScreen = new PracticeScreen();
-        mPracticeScreen->Resize(0, 0, mWidth, mHeight);
-        mWidgetManager->AddWidget(mPracticeScreen);
-        mWidgetManager->SetFocus(mPracticeScreen);
-
-        if (aMainMenu)
-        {
-            mWidgetMover->MoveWidget(mPracticeScreen, -mPracticeScreen->mWidth, 0, 0, 0, false);
-        }
-
-        PlaySong(34, true, 0.01);
-        ClearUpdateBacklog();
+        mAdventureScreen->RevealTemple(75, mProfile->mMaxStage / 3 + 1);
+        mAdventureScreen->SetStartNextTempleOnRevel(true);
     }
+
+    if (aMainMenu)
+    {
+        mWidgetMover->MoveWidget(mAdventureScreen, -mAdventureScreen->mWidth, 0, 0, 0, false);
+    }
+
+    PlaySong(32, true, 0.01);
+    ClearUpdateBacklog();
+}
+
+void CircleShootApp::ShowPracticeScreeen(bool fromMenu)
+{
+    mIsPractice = true;
+    if (fromMenu && CheckSaveGame(true))
+        return;
+
+    MainMenu *aMainMenu = mMainMenu;
+    mWidgetMover->DelayDeleteWidget(mMainMenu);
+    mMainMenu = NULL;
+
+    CleanupWidgets();
+
+    mPracticeScreen = new PracticeScreen();
+    mPracticeScreen->Resize(0, 0, mWidth, mHeight);
+    mWidgetManager->AddWidget(mPracticeScreen);
+    mWidgetManager->SetFocus(mPracticeScreen);
+
+    if (aMainMenu)
+    {
+        mWidgetMover->MoveWidget(mPracticeScreen, -mPracticeScreen->mWidth, 0, 0, 0, false);
+    }
+
+    PlaySong(34, true, 0.01);
+    ClearUpdateBacklog();
 }
 
 void CircleShootApp::ShowMoreGamesScreen()

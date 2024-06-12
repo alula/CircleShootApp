@@ -21,7 +21,7 @@ CurveDesc::CurveDesc()
     mNumBalls = 0;
     mBallRepeat = 40;
     mMaxSingle = 10;
-    mMergeSpeed = 0.05;
+    mMergeSpeed = 0.05f;
     mDangerDistance = 600;
     mAccelerationRate = 0;
     mMaxSpeed = 100;
@@ -140,10 +140,7 @@ LevelDesc &LevelParser::GetLevel(int theDifficulty, const StringList &theAvoidCu
         int aRnd = Sexy::AppRand() % (int)aLevelList.size();
 
         std::vector<LevelDesc *>::iterator anItr = aLevelList.begin();
-
-        // what the fuck???
-        for (int i = 0; i < aRnd; i++)
-            anItr++;
+        std::advance(anItr, aRnd);
 
         return **anItr;
     }
@@ -162,12 +159,12 @@ LevelDesc &LevelParser::GetStageLevel(int theLevelNum)
     {
         LevelDescList &aLevelList = mStageMap[i];
 
-        if (aLevelCounter + aLevelList.size() > theLevelNum)
+        if (aLevelCounter + (int)aLevelList.size() > theLevelNum)
         {
             return aLevelList[theLevelNum - aLevelCounter];
         }
 
-        aLevelCounter += aLevelList.size();
+        aLevelCounter += (int)aLevelList.size();
     }
 
     return mLevels[0];
@@ -256,8 +253,7 @@ LevelDesc &LevelParser::GetRandomBoard(int theDifficulty, int theLevel, UserProf
         int aRnd = Sexy::ThreadRand() % aMap.size();
 
         UserProfile::BoardMap::iterator anItr = aMap.begin();
-        for (int i = 0; i < aRnd; i++)
-            anItr++;
+        std::advance(anItr, aRnd);
 
         LevelDesc *aDesc = &GetLevel(theDifficulty, anAvoidCurves, anItr->first);
         if (!theAvoidCurves.empty())
@@ -269,8 +265,7 @@ LevelDesc &LevelParser::GetRandomBoard(int theDifficulty, int theLevel, UserProf
                 int aRnd = Sexy::ThreadRand() % aMap.size();
 
                 UserProfile::BoardMap::iterator anItr = aMap.begin();
-                for (int i = 0; i < aRnd; i++)
-                    anItr++;
+                std::advance(anItr, aRnd);
 
                 aDesc = &GetLevel(theDifficulty, theAvoidCurves, anItr->first);
             }
@@ -286,8 +281,7 @@ LevelDesc &LevelParser::GetRandomBoard(int theDifficulty, int theLevel, UserProf
             int aRnd = Sexy::ThreadRand() % aMap.size();
 
             UserProfile::BoardMap::iterator anItr = aMap.begin();
-            for (int i = 0; i < aRnd; i++)
-                anItr++;
+            std::advance(anItr, aRnd);
 
             aDesc = &GetLevel(theDifficulty, theAvoidCurves, anItr->first);
         }

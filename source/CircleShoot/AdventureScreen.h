@@ -1,5 +1,5 @@
-#ifndef __PRACTICESCREEN_H__
-#define __PRACTICESCREEN_H__
+#ifndef __ADVENTURESCREEN_H__
+#define __ADVENTURESCREEN_H__
 
 #include <SexyAppFramework/Widget.h>
 #include <SexyAppFramework/ButtonListener.h>
@@ -18,43 +18,34 @@ namespace Sexy
 
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
-    class PracticeScreen : public Widget, public ButtonListener
+    class AdventureScreen : public Widget, public ButtonListener
     {
     private:
         struct DoorInfo
         {
             MemoryImage *mImage;
             Rect mRect;
+            Point mUnknown;
         };
 
         typedef std::multiset<HighScore> HighScoreSet;
 
-        CircleButton *mNextButton;
-        CircleButton *mBackButton;
-        CircleButton *mGauntPlayButton;
         CircleButton *mMainMenuButton;
-        CircleButton *mPracticeButton;
-        CircleButton *mSurvivalButton;
-        MemoryImage *mThumbnail;
-        MemoryImage *mGradientImageLocked;
-        MemoryImage *mGradientImageQuestionMark;
-        bool mIsEndless;
+        CircleButton *mPlayButton;
+        int mMaxStage;
+        DoorInfo mDoorInfo[12];
         int mCurrentDoor;
         int mHighlightDoor;
-        int mMaxStage;
-        int mDifficulty;
         int mLastClickCnt;
-        int mGauntletBlinkCount;
-        DoorInfo mDoorInfo[4];
-        int mCurrentBoard;
-        std::string mStage;
-        std::string mDisplayName;
-        HighScoreSet *mScoreSet;
-        bool mLocked;
+        int mTempleXOffsets[4];
+        int mTemples;
+        bool mStartNextTempleOnReveal;
+        int mStagger;
+        HighScoreSet* mScoreSet;
 
     public:
-        PracticeScreen();
-        virtual ~PracticeScreen();
+        AdventureScreen();
+        virtual ~AdventureScreen();
 
         virtual void Update();
         virtual void Resize(int theX, int theY, int theWidth, int theHeight);
@@ -68,12 +59,14 @@ namespace Sexy
         virtual void MouseDown(int x, int y, int theButton);
         virtual void MouseUp(int x, int y);
 
-        void SyncModeButtons();
-        MemoryImage *CreateGradientImage(std::string const &theName, int theAlpha);
+        void RevealTemple(int x, int y);
+        void SetStartNextTempleOnRevel(bool start);
+        void DrawDoors(Graphics *g, int x, int y);
+        void DrawTemple1(Graphics *g);
+        void DrawTemple2(Graphics *g);
+        void DrawTemple3(Graphics *g);
+        void DrawTemple4(Graphics *g);
         int GetDoorAt(int x, int y);
-        MemoryImage *GetThumbnail(std::string const &theName);
-        void GetHighscores();
-        void LoadBoard();
     };
 
 };

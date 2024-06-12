@@ -84,6 +84,12 @@ CurveMgr::~CurveMgr()
 
 void CurveMgr::SetLosing()
 {
+    for (BulletList::iterator anItr = mBulletList.begin(); anItr != mBulletList.end(); anItr++)
+    {
+        Bullet *aBullet = *anItr;
+        delete aBullet;
+    }
+
     mBulletList.clear();
 
     for (BallList::iterator anItr = mBallList.begin(); anItr != mBallList.end(); anItr++)
@@ -140,18 +146,18 @@ void CurveMgr::SetupLevelDesc(LevelDesc *theDesc)
         mDangerPoint = mWayPointMgr->GetEndPoint();
 }
 
-void MakeCombo(BallList &theList, int theBallExtraCounts, int theGroupCount, int theNumColors)
+void MakeCombo(BallList &theList, int theNumBalls, int theComboSize, int theNumColors)
 {
     std::vector<int> aBallCounts;
     std::vector<int> aBallTypes;
 
-    aBallTypes.resize(theGroupCount);
-    aBallCounts.resize(theGroupCount);
+    aBallTypes.resize(theComboSize);
+    aBallCounts.resize(theComboSize);
 
-    int aExtraCount = theBallExtraCounts;
+    int aBallCount = theNumBalls;
     int aPrevColor = -1;
 
-    for (int i = 0; i < theGroupCount; ++i)
+    for (int i = 0; i < theComboSize; i++)
     {
         int aNewColor;
         do
@@ -161,30 +167,31 @@ void MakeCombo(BallList &theList, int theBallExtraCounts, int theGroupCount, int
 
         aBallTypes[i] = aNewColor;
         aBallCounts[i] = 3;
-        aExtraCount -= 3;
+        aBallCount -= 3;
         aPrevColor = aNewColor;
     }
 
-    for (int i = 0; i < aExtraCount; i++)
+    for (int i = 0; i < aBallCount; i++)
     {
-        ++aBallCounts[Sexy::AppRand() % theGroupCount];
+        aBallCounts[Sexy::AppRand() % theComboSize]++;
     }
 
-    BallList::iterator aBallIter = theList.begin();
-    for (int i = 0; i < theGroupCount; i++)
+    BallList::iterator aBallItr = theList.begin();
+    for (int i = 0; i < theComboSize; i++)
     {
         int aType = aBallTypes[i];
         int aCount = aBallCounts[i];
 
         for (int j = 0; j < aCount; j++)
         {
-            int insertNext = !(Sexy::AppRand() & 1);
+            bool insertNext = (Sexy::AppRand() % 2) != 0;
             Ball *aBall = new Ball();
             aBall->SetType(aType);
+            aBall->RandomizeFrame();
 
             if (insertNext)
             {
-                aBallIter = theList.insert(aBallIter, aBall);
+                aBallItr = theList.insert(aBallItr, aBall);
             }
             else
             {
@@ -379,38 +386,39 @@ void CurveMgr::DrawBalls(BallDrawer &theDrawer)
 
 bool CurveMgr::CheckCollision(Bullet *theBullet)
 {
+    Bullet *aBullet = theBullet;
     Ball *ball;
     bool flag;
 
-    for (BulletList::iterator i = mBulletList.begin(); i != mBulletList.end(); ++i)
+    for (BulletList::iterator anItr = mBulletList.begin(); anItr != mBulletList.end(); anItr++)
     {
-        Bullet *bullet = *i;
+        aBullet = *anItr;
 
-        if (theBullet->CollidesWithPhysically(bullet))
+        if (theBullet->CollidesWithPhysically(aBullet))
         {
-            bullet->Update();
-            AdvanceMergingBullet(i);
+            aBullet->Update();
+            AdvanceMergingBullet(anItr);
             break;
         }
     }
 
-    BallList::iterator aBallIter;
-    for (aBallIter = mBallList.begin();; ++aBallIter)
+    BallList::iterator aBallItr;
+    for (aBallItr = mBallList.begin();; ++aBallItr)
     {
-        if (aBallIter == mBallList.end())
+        if (aBallItr == mBallList.end())
         {
             return false;
         }
 
-        ball = *aBallIter;
+        ball = *aBallItr;
 
         if (ball->CollidesWithPhysically(theBullet) && ball->GetBullet() == NULL && ball->GetClearCount() == 0)
         {
-            Ball *prevBall = ball->GetPrevBall(true);
-            if (prevBall == NULL || prevBall->GetBullet() == NULL)
+            Ball *aPrevBall = ball->GetPrevBall(true);
+            if (aPrevBall == NULL || aPrevBall->GetBullet() == NULL)
             {
-                Ball *nextBall = ball->GetNextBall(true);
-                if (nextBall == NULL || nextBall->GetBullet() == NULL)
+                Ball *aNextBall = ball->GetNextBall(true);
+                if (aNextBall == NULL || aNextBall->GetBullet() == NULL)
                 {
                     SexyVector3 v(ball->GetX(), ball->GetY(), 0.0f);
                     SexyVector3 impliedObject(theBullet->GetX(), theBullet->GetY(), 0.0f);
@@ -426,45 +434,44 @@ bool CurveMgr::CheckCollision(Bullet *theBullet)
         }
     }
 
-    if (aBallIter == mBallList.end())
+    if (aBallItr != mBallList.end())
     {
-        return false;
+        theBullet->SetHitBall(ball, flag);
+        theBullet->SetMergeSpeed(mCurveDesc->mMergeSpeed);
+
+        Ball *nextBall2 = ball->GetNextBall(false);
+        if (!flag)
+        {
+            theBullet->RemoveGapInfoForBall(ball->GetId());
+        }
+        else if (nextBall2 != NULL)
+        {
+            theBullet->RemoveGapInfoForBall(nextBall2->GetId());
+        }
+
+        mApp->PlaySample(Sexy::SOUND_BALLCLICK2);
+        mBulletList.push_back(theBullet);
+
+        return true;
     }
-
-    theBullet->SetHitBall(ball, flag);
-    theBullet->SetMergeSpeed(mCurveDesc->mMergeSpeed);
-
-    Ball *nextBall2 = ball->GetNextBall(false);
-    if (!flag)
-    {
-        theBullet->RemoveGapInfoForBall(ball->GetId());
-    }
-    else if (nextBall2 != NULL)
-    {
-        theBullet->RemoveGapInfoForBall(nextBall2->GetId());
-    }
-
-    mApp->PlaySample(Sexy::SOUND_BALLCLICK2);
-    mBulletList.push_back(theBullet);
-
-    return true;
+    return false;
 }
 
 bool CurveMgr::CheckGapShot(Bullet *theBullet)
 {
-    int aBulDiameter = theBullet->GetRadius() * 2;
     int aBulRadius = theBullet->GetRadius();
+    int aBulDiameter = aBulRadius * 2;
     float aBulDiameterSq = (float)aBulDiameter * (float)aBulDiameter;
-    int aBulX = theBullet->GetX();
-    int aBulY = theBullet->GetY();
-    size_t aNumWayPoints = mWayPointMgr->GetNumPoints();
+    float aBulX = theBullet->GetX();
+    float aBulY = theBullet->GetY();
+    int aNumWayPoints = (int)mWayPointMgr->GetNumPoints();
     int aBallIdx = theBullet->GetCurCurvePoint(mCurveNum);
 
-    if (aBallIdx > 0 && aNumWayPoints > aBallIdx)
+    if (aBallIdx > 0 && aBallIdx < aNumWayPoints)
     {
         const WayPoint *aWayPoint = &mWayPointMgr->GetWayPointList()[aBallIdx];
-        if (aBulDiameterSq > ((aWayPoint->x - aBulX) * (aWayPoint->x - aBulX) +
-                              (aWayPoint->y - aBulY) * (aWayPoint->y - aBulY)))
+        if (aBulDiameterSq > ((aWayPoint->y - aBulY) * (aWayPoint->y - aBulY) +
+                              (aWayPoint->x - aBulX) * (aWayPoint->x - aBulX)))
         {
             return false;
         }
@@ -475,14 +482,14 @@ bool CurveMgr::CheckGapShot(Bullet *theBullet)
     for (int i = 1; i < aNumWayPoints; i += aBulDiameter)
     {
         const WayPoint *aWayPoint = &mWayPointMgr->GetWayPointList()[i];
-        if (!aWayPoint->mInTunnel && (aBulDiameterSq > (aWayPoint->x - aBulX) * (aWayPoint->x - aBulX) +
-                                                           (aWayPoint->y - aBulY) * (aWayPoint->y - aBulY)))
+        if (!aWayPoint->mInTunnel && (aBulDiameterSq > (aWayPoint->y - aBulY) * (aWayPoint->y - aBulY) +
+                                                           (aWayPoint->x - aBulX) * (aWayPoint->x - aBulX)))
         {
             theBullet->SetCurCurvePoint(mCurveNum, i);
 
-            for (BallList::iterator aBallIter = mBallList.begin(); aBallIter != mBallList.end(); ++aBallIter)
+            for (BallList::iterator aBallItr = mBallList.begin(); aBallItr != mBallList.end(); ++aBallItr)
             {
-                Ball *aBall = *aBallIter;
+                Ball *aBall = *aBallItr;
 
                 if (aBall->GetWayPoint() > i)
                 {
@@ -492,13 +499,17 @@ bool CurveMgr::CheckGapShot(Bullet *theBullet)
                         return false;
                     }
 
-                    float aBallDist = aBall->GetWayPoint() - aPrevBall->GetWayPoint();
-                    if (aBallDist > 0)
+                    int aBallDist = aBall->GetWayPoint() - aPrevBall->GetWayPoint();
+                    if (aBallDist <= 0)
                     {
-                        return theBullet->AddGapInfo(mCurveNum, aBallDist, aBall->GetId());
+                        return false;
                     }
+
+                    return theBullet->AddGapInfo(mCurveNum, aBallDist, aBall->GetId());
                 }
             }
+
+            return false;
         }
     }
 
@@ -610,25 +621,23 @@ void CurveMgr::ActivatePower(Ball *theBall)
     PowerType aPowerType = theBall->GetPowerTypeWussy();
     gGotPowerUp[aPowerType] = true;
 
-    switch (aPowerType)
+    if (aPowerType == PowerType_Bomb)
     {
-    case PowerType_Bomb:
         ActivateBomb(theBall);
-        break;
-    case PowerType_SlowDown:
-        if (mSlowCount < 1000)
-        {
-            mSlowCount = 800;
-        }
-        break;
-    case PowerType_Accuracy:
-        break;
-    case PowerType_MoveBackwards:
+    }
+    else if (aPowerType == PowerType_MoveBackwards)
+    {
         if (!mBallList.empty())
         {
             mBackwardCount = 300;
         }
-        break;
+    }
+    else if (aPowerType == PowerType_SlowDown)
+    {
+        if (mSlowCount < 1000)
+        {
+            mSlowCount = 800;
+        }
     }
 }
 
@@ -982,14 +991,14 @@ void CurveMgr::SetFarthestBall(int thePoint)
 
 int CurveMgr::GetNumInARow(Ball *theBall, int theColor, Ball **theNextEnd, Ball **thePrevEnd)
 {
-
-    Ball *aPrevEnd = theBall;
-    Ball *aNextEnd = theBall;
-    int aColor = theBall->GetType();
-    if (aColor != theColor)
+    if (theBall->GetType() != theColor)
         return 0;
 
+    Ball *aBall = theBall;
+    int aColor = theColor;
     int aCount = 1;
+
+    Ball *aNextEnd = aBall;
     while (true)
     {
         Ball *aNextBall = aNextEnd->GetNextBall(true);
@@ -1000,6 +1009,7 @@ int CurveMgr::GetNumInARow(Ball *theBall, int theColor, Ball **theNextEnd, Ball 
         aCount++;
     }
 
+    Ball *aPrevEnd = aBall;
     while (true)
     {
         Ball *aPrevBall = aPrevEnd->GetPrevBall(true);
@@ -1025,7 +1035,9 @@ bool CurveMgr::CheckSet(Ball *theBall)
     Ball *aNextEnd = NULL;
     int aComboCount = theBall->GetComboCount();
 
-    if (GetNumInARow(theBall, theBall->GetType(), &aNextEnd, &aPrevEnd) < 3)
+    int aCount = GetNumInARow(theBall, theBall->GetType(), &aNextEnd, &aPrevEnd);
+
+    if (aCount < 3)
     {
         return false;
     }
@@ -1040,11 +1052,12 @@ bool CurveMgr::CheckSet(Ball *theBall)
     for (int i = 0; i < PowerType_Max; i++)
         gGotPowerUp[i] = false;
 
-    Ball *anEndBall = aNextEnd->GetNextBall();
     int aGapBonus = 0;
     int aNumGaps = 0;
+    Ball *anEndBall = aNextEnd->GetNextBall();
+    Ball *aBall = aPrevEnd;
 
-    for (Ball *aBall = aPrevEnd; aBall != anEndBall; aBall = aBall->GetNextBall())
+    while (aBall != anEndBall)
     {
         if (aBall->GetSuckPending())
         {
@@ -1054,10 +1067,11 @@ bool CurveMgr::CheckSet(Ball *theBall)
 
         StartClearCount(aBall);
         aGapBonus += aBall->GetGapBonus();
-        if (aNumGaps < aBall->GetNumGaps())
+        if (aBall->GetNumGaps() > aNumGaps)
             aNumGaps = aBall->GetNumGaps();
 
         aBall->SetGapBonus(0, 0);
+        aBall = aBall->GetNextBall();
     }
 
     DoScoring(theBall, mBoard->mNumCleared, aComboCount, aGapBonus, aNumGaps);
@@ -1070,9 +1084,11 @@ bool CurveMgr::CheckSet(Ball *theBall)
         mBoard->mLevelStats.mMaxComboScore = mBoard->mCurComboScore;
     }
 
-    for (Ball *aBall = aPrevEnd; aBall != anEndBall; aBall = aBall->GetNextBall())
+    aBall = aPrevEnd;
+    while (aBall != anEndBall)
     {
         aBall->SetComboCount(aComboCount, mBoard->mCurComboScore);
+        aBall = aBall->GetNextBall();
     }
 
     BallList::iterator anItr = mBoard->mNeedComboCount.begin();
@@ -1217,6 +1233,22 @@ void CurveMgr::DoScoring(Ball *theBall, int theNumBalls, int theComboCount, int 
     aFloat.AddToMgr(mBoard->mParticleMgr, aClrX, aClrY);
 }
 
+static void GetNumPendingSinglesHelper(int aColor, int &aNumGroups, int &aPrevColor, int &aNumSingles, int &aGroupCount)
+{
+    if (aColor == aPrevColor)
+    {
+        ++aGroupCount;
+    }
+    else
+    {
+        if (aGroupCount == 1)
+            ++aNumSingles;
+        aGroupCount = 1;
+        ++aNumGroups;
+        aPrevColor = aColor;
+    }
+}
+
 int CurveMgr::GetNumPendingSingles(int theNumGroups)
 {
     int aNumGroups = 0;
@@ -1231,19 +1263,7 @@ int CurveMgr::GetNumPendingSingles(int theNumGroups)
         if (aNumGroups > theNumGroups)
             break;
 
-        if (aPrevColor != aBall->GetType())
-        {
-            if (aGroupCount == 1)
-                ++aNumSingles;
-
-            ++aNumGroups;
-            aPrevColor = aBall->GetType();
-            aGroupCount = 1;
-        }
-        else
-        {
-            aGroupCount++;
-        }
+        GetNumPendingSinglesHelper(aBall->GetType(), aNumGroups, aPrevColor, aNumSingles, aGroupCount);
 
         anRItr++;
     }
@@ -1251,18 +1271,8 @@ int CurveMgr::GetNumPendingSingles(int theNumGroups)
     for (BallList::iterator anItr = mPendingBalls.begin(); anItr != mPendingBalls.end(); ++anItr)
     {
         Ball *aBall = *anItr;
-        if (aPrevColor != aBall->GetType())
-        {
-            aGroupCount++;
-        }
-        else
-        {
-            if (aGroupCount == 1)
-                ++aNumSingles;
-            ++aNumGroups;
-            aPrevColor = aBall->GetType();
-            aGroupCount = 1;
-        }
+
+        GetNumPendingSinglesHelper(aBall->GetType(), aNumGroups, aPrevColor, aNumSingles, aGroupCount);
     }
 
     return aNumSingles;
@@ -1292,11 +1302,17 @@ void CurveMgr::AddPendingBall()
         aPrevColor = GetRandomPendingBallColor(aNumColors);
     }
 
-    if (aNumColors <= aPrevColor)
+    if (aPrevColor >= aNumColors)
+    {
         aPrevColor = GetRandomPendingBallColor(aNumColors);
+    }
 
     int aMaxSingle = mCurveDesc->mMaxSingle;
-    if (Sexy::AppRand() % 100 <= mCurveDesc->mBallRepeat || aMaxSingle < 10 && GetNumPendingSingles(1) == 1 && (!aMaxSingle || aMaxSingle < GetNumPendingSingles(10)))
+    if (Sexy::AppRand() % 100 <= mCurveDesc->mBallRepeat)
+    {
+        aNewColor = aPrevColor;
+    }
+    else if (aMaxSingle < 10 && GetNumPendingSingles(1) == 1 && (aMaxSingle == 0 || GetNumPendingSingles(10) > aMaxSingle))
     {
         aNewColor = aPrevColor;
     }
@@ -1325,22 +1341,27 @@ void CurveMgr::AddBall()
     Ball *aBall = mPendingBalls.front();
     mWayPointMgr->SetWayPoint(aBall, 1.0f);
 
-    Ball *aFrontBall = NULL;
-    if (mBallList.empty() || (aFrontBall = mBallList.front(), aBall->GetWayPoint() <= aFrontBall->GetWayPoint()) && !aBall->CollidesWith(aFrontBall))
+    if (!mBallList.empty())
     {
-        mBoard->UpdateBallColorMap(aBall, true);
-
-        aBall->InsertInList(mBallList, mBallList.begin());
-        aBall->UpdateCollisionInfo(mAdvanceSpeed + 5.0f);
-        aBall->SetNeedCheckCollision(true);
-        aBall->SetRotation(mWayPointMgr->GetRotationForPoint(aBall->GetWayPoint()));
-        aBall->SetBackwardsCount(0);
-        aBall->SetSuckCount(0);
-        aBall->SetGapBonus(0, 0);
-        aBall->SetComboCount(0, 0);
-
-        mPendingBalls.pop_front();
+        Ball *aFrontBall = mBallList.front();
+        if (aBall->GetWayPoint() > aFrontBall->GetWayPoint() || aFrontBall->CollidesWith(aBall))
+        {
+            return;
+        }
     }
+
+    mBoard->UpdateBallColorMap(aBall, true);
+
+    aBall->InsertInList(mBallList, mBallList.begin());
+    aBall->UpdateCollisionInfo(5 + mAdvanceSpeed);
+    aBall->SetNeedCheckCollision(true);
+    aBall->SetRotation(mWayPointMgr->GetRotationForPoint(aBall->GetWayPoint()));
+    aBall->SetBackwardsCount(0);
+    aBall->SetSuckCount(0);
+    aBall->SetGapBonus(0, 0);
+    aBall->SetComboCount(0, 0);
+
+    mPendingBalls.pop_front();
 }
 
 void CurveMgr::UpdateBallRotation()
@@ -1368,6 +1389,7 @@ void CurveMgr::AdvanceBalls()
     {
         mCurveDesc->mCurAcceleration += mCurveDesc->mAccelerationRate;
         aMaxSpeed += mCurveDesc->mCurAcceleration;
+
         if (aMaxSpeed > mCurveDesc->mMaxSpeed)
         {
             aMaxSpeed = mCurveDesc->mMaxSpeed;
@@ -1387,7 +1409,8 @@ void CurveMgr::AdvanceBalls()
         }
         else
         {
-            aMaxSpeed = ((aMaxSpeed * (mFirstChainEnd - (mDangerPoint - mCurveDesc->mSlowDistance))) / mCurveDesc->mSlowDistance) + (1.0f - (mFirstChainEnd - (mDangerPoint - mCurveDesc->mSlowDistance)) / mCurveDesc->mSlowDistance) * aMaxSpeed;
+            float aDist = (mFirstChainEnd - (mDangerPoint - mCurveDesc->mSlowDistance)) / mCurveDesc->mSlowDistance;
+            aMaxSpeed = (1 - aDist) * aMaxSpeed + aDist * aMaxSpeed / mCurveDesc->mSlowFactor;
         }
     }
 
@@ -1425,11 +1448,10 @@ void CurveMgr::AdvanceBalls()
     }
 
     Ball *aBall = mBallList.front();
-    Ball *aNextBall = NULL;
-    float aNextWayPoint = 0.0f;
+    float aNextWayPoint = aBall->GetWayPoint();
     if (!mFirstBallMovedBackwards && !mStopTime)
     {
-        mWayPointMgr->SetWayPoint(aBall, aBall->GetWayPoint() + mAdvanceSpeed);
+        mWayPointMgr->SetWayPoint(aBall, aNextWayPoint + mAdvanceSpeed);
     }
 
     BallList::iterator anItr = mBallList.begin();
@@ -1437,21 +1459,20 @@ void CurveMgr::AdvanceBalls()
 
     while (anItr != mBallList.end())
     {
-        aBall = *anItr;
-        aNextBall = NULL;
-        anItr++;
+        aBall = *anItr++;
 
         if (anItr == mBallList.end())
         {
             break;
         }
 
-        aNextBall = *anItr;
+        Ball *aNextBall = *anItr;
         aNextWayPoint = aNextBall->GetWayPoint();
+        float aWayPoint = aBall->GetWayPoint();
 
-        if (aBall->GetWayPoint() > aNextWayPoint - aBall->GetRadius() - aNextBall->GetRadius())
+        if (aWayPoint > aNextWayPoint - aBall->GetRadius() - aNextBall->GetRadius())
         {
-            mWayPointMgr->SetWayPoint(aNextBall, aBall->GetWayPoint() + aBall->GetRadius() + aNextBall->GetRadius());
+            mWayPointMgr->SetWayPoint(aNextBall, aWayPoint + aBall->GetRadius() + aNextBall->GetRadius());
 
             if (!aBall->GetCollidesWithNext())
             {
@@ -1464,9 +1485,8 @@ void CurveMgr::AdvanceBalls()
 
         if (aFirstChainEnd == NULL)
         {
-            if (aBall->GetCollidesWithNext())
-                aBall = NULL;
-            aFirstChainEnd = aBall;
+            if (!aBall->GetCollidesWithNext())
+                aFirstChainEnd = aBall;
         }
     }
 
@@ -1477,7 +1497,7 @@ void CurveMgr::AdvanceBalls()
 
     mFirstChainEnd = aFirstChainEnd->GetWayPoint();
 
-    if (mDangerPoint <= mFirstChainEnd)
+    if (mFirstChainEnd >= mDangerPoint)
     {
         int aTick = Sexy::BoardGetTickCount();
         int aMaxTime = 100 + 4000 * (GetCurveLength() - mFirstChainEnd) / (GetCurveLength() - mDangerPoint);
@@ -1502,7 +1522,7 @@ void CurveMgr::AdvanceBackwardBalls()
         return;
 
     BallList::reverse_iterator anItr = mBallList.rbegin();
-    bool v2 = false;
+    bool aCollided = false;
     float aBackwardsSpeed = 0.0f;
 
     if (mBackwardCount != 0)
@@ -1511,52 +1531,55 @@ void CurveMgr::AdvanceBackwardBalls()
         mBallList.back()->SetBackwardsCount(1);
     }
 
-    int i = 0;
     for (;;)
     {
         Ball *aBall = *anItr;
-
         int aBackwardsCount = aBall->GetBackwardsCount();
+
         if (aBackwardsCount > 0)
         {
             aBackwardsSpeed = aBall->GetBackwardsSpeed();
             mWayPointMgr->SetWayPoint(aBall, aBall->GetWayPoint() - aBackwardsSpeed);
             aBall->SetBackwardsCount(aBackwardsCount - 1);
-            v2 = true;
+            aCollided = true;
         }
 
-        if (++anItr == mBallList.rend())
+        anItr++;
+        if (anItr == mBallList.rend())
         {
             break;
         }
 
         Ball *aNextBall = *anItr;
 
-        if (v2)
+        if (aCollided)
         {
             if (aNextBall->GetCollidesWithNext())
             {
-                mWayPointMgr->SetWayPoint(aNextBall, aNextBall->GetWayPoint() - aBackwardsSpeed);
+                float aPoint = aNextBall->GetWayPoint() - aBackwardsSpeed;
+                mWayPointMgr->SetWayPoint(aNextBall, aPoint);
             }
             else
             {
-                float aRadDiff = (aBall->GetWayPoint() - (float)aBall->GetRadius()) - (float)aNextBall->GetRadius();
-                if (aNextBall->GetWayPoint() <= aRadDiff)
-                {
-                    v2 = false;
-                    continue;
-                }
+                const float aWayOffNext = aBall->GetWayPoint() - (float)aBall->GetRadius() - (float)aNextBall->GetRadius();
 
-                aNextBall->SetCollidesWithNext(true);
-                v2 = true;
-                mBoard->PlayBallClick(Sexy::SOUND_BALLCLICK1);
-                aBackwardsSpeed = aNextBall->GetWayPoint() - aRadDiff;
-                aNextBall->SetWayPoint(aRadDiff);
+                if (aNextBall->GetWayPoint() > aWayOffNext)
+                {
+                    aNextBall->SetCollidesWithNext(true);
+                    aCollided = true;
+                    mBoard->PlayBallClick(Sexy::SOUND_BALLCLICK1);
+                    aBackwardsSpeed = aNextBall->GetWayPoint() - aWayOffNext;
+                    aNextBall->SetWayPoint(aWayOffNext);
+                }
+                else
+                {
+                    aCollided = false;
+                }
             }
         }
     }
 
-    if (v2)
+    if (aCollided)
     {
         mFirstBallMovedBackwards = true;
         if (mStopTime < 20)
@@ -1581,16 +1604,13 @@ void CurveMgr::UpdateSuckingBalls()
         }
 
         Ball *aNextBall = NULL;
-        do
+        float aSuck = aSuckCount / 8;
+        while (anItr != mBallList.end())
         {
-            if (anItr == mBallList.end())
-            {
-                break;
-            }
 
             aNextBall = *anItr++;
             aNextBall->SetSuckCount(0);
-            mWayPointMgr->SetWayPoint(aNextBall, aNextBall->GetWayPoint() - (float)(aSuckCount >> 3));
+            mWayPointMgr->SetWayPoint(aNextBall, aNextBall->GetWayPoint() - aSuck);
 
             Bullet *aBullet = aNextBall->GetBullet();
             if (aBullet != NULL)
@@ -1603,7 +1623,10 @@ void CurveMgr::UpdateSuckingBalls()
 
                 aBullet->UpdateHitPos();
             }
-        } while (aNextBall->GetCollidesWithNext());
+
+            if (!aNextBall->GetCollidesWithNext())
+                break;
+        }
 
         aBall->SetSuckCount(aSuckCount + 1);
         Ball *aPrevBall = aBall->GetPrevBall(false);
@@ -1611,10 +1634,13 @@ void CurveMgr::UpdateSuckingBalls()
         if (aPrevBall == NULL)
         {
             aBall->SetSuckCount(0);
+            continue;
         }
-        else if (aPrevBall->GetWayPoint() > (aBall->GetWayPoint() - aBall->GetRadius()) - aPrevBall->GetRadius())
+
+        float aNewWayPoint = (aBall->GetWayPoint() - aBall->GetRadius()) - aPrevBall->GetRadius();
+        if (aPrevBall->GetWayPoint() > aNewWayPoint)
         {
-            mWayPointMgr->SetWayPoint(aPrevBall, aBall->GetWayPoint() - aBall->GetRadius() - aPrevBall->GetRadius());
+            mWayPointMgr->SetWayPoint(aPrevBall, aNewWayPoint);
             mBoard->PlayBallClick(SOUND_BALLCLICK1);
             aPrevBall->SetCollidesWithNext(true);
             aBall->SetSuckCount(0);
@@ -1752,18 +1778,19 @@ void CurveMgr::AdvanceMergingBullet(BulletList::iterator &theBulletItr)
     if (aPushBall != NULL)
     {
         float num = 1.0f - aBul->GetHitPercent();
-        float f = (-aBul->GetRadius() * num) / 2.0f;
+        float f = -aBul->GetRadius() * num / 2.0f;
         float aPoint = aPushBall->GetWayPoint();
-        float v19 = (aPushBall->GetRadius() + aBul->GetRadius()) * (aBul->GetHitPercent() * aBul->GetHitPercent());
+        float aPercent = (aPushBall->GetRadius() + aBul->GetRadius()) * (aBul->GetHitPercent() * aBul->GetHitPercent());
 
-        mWayPointMgr->FindFreeWayPoint(aBul, aPushBall, true, f);
+        mWayPointMgr->FindFreeWayPoint(aBul, aBul->GetPushBall(), true, (int)f);
 
         float aWayPoint = aBul->GetWayPoint();
-        if (aPushBall->GetWayPoint() - aWayPoint > v19)
+        if (aPushBall->GetWayPoint() - aWayPoint > aPercent)
         {
-            if ((v19 + aWayPoint) > aPoint)
+            float anEndPoint = aPercent + aWayPoint;
+            if (anEndPoint > aPoint)
             {
-                mWayPointMgr->SetWayPoint(aPushBall, v19 + aWayPoint);
+                mWayPointMgr->SetWayPoint(aPushBall, anEndPoint);
             }
             else
             {
@@ -1774,11 +1801,7 @@ void CurveMgr::AdvanceMergingBullet(BulletList::iterator &theBulletItr)
         aPushBall->SetNeedCheckCollision(true);
     }
 
-    if (aBul->GetHitPercent() < 1.0f)
-    {
-        theBulletItr++;
-    }
-    else
+    if (aBul->GetHitPercent() >= 1.0f)
     {
         BallList::iterator aBallItr = aHitBall->GetListItr();
         if (aBul->GetHitInFront())
@@ -1814,12 +1837,15 @@ void CurveMgr::AdvanceMergingBullet(BulletList::iterator &theBulletItr)
 
         if (aMinGapDist > 0)
         {
-            int v22 = aMinGapDist - 64;
-            if (v22 < 0) {
+            aMinGapDist -= GetDefaultBallRadius() * 4;
+            if (aMinGapDist < 0)
+            {
                 aMinGapDist = 0;
-                v22 = 0;
             }
-            int aGapBonus = 10 * ((300 - v22) * (mBoard->mIsEndless ? 250 : 500) / 300 / 10);
+
+            int aBonusRate = (mBoard->mIsEndless ? 250 : 500);
+            int aGapBonus = ((MAX_GAP_SIZE - aMinGapDist) * aBonusRate / MAX_GAP_SIZE);
+            aGapBonus = (aGapBonus / 10) * 10;
             if (aGapBonus < 10)
             {
                 aGapBonus = 10;
@@ -1832,39 +1858,41 @@ void CurveMgr::AdvanceMergingBullet(BulletList::iterator &theBulletItr)
         }
 
         mBoard->mNumClearsInARow++;
-        if (CheckSet(aNewBall))
+        if (!CheckSet(aNewBall))
         {
-            return;
-        }
+            mBoard->mNumClearsInARow--;
 
-        mBoard->mNumClearsInARow--;
-
-        if (aPrevBall != NULL &&
-            !aPrevBall->GetCollidesWithNext() &&
-            aPrevBall->GetType() == aNewBall->GetType() &&
-            aPrevBall->GetBullet() == NULL &&
-            aPrevBall->GetClearCount() == 0)
-        {
-            aNewBall->SetSuckPending(true);
-            aNewBall->SetSuckCount(1);
-        }
-        else if (aNextBall == NULL ||
-                 aNextBall->GetCollidesWithNext() ||
-                 aNextBall->GetType() != aNewBall->GetType() ||
-                 aNextBall->GetBullet() != NULL ||
-                 aNextBall->GetClearCount() != 0)
-        {
-            mBoard->ResetInARowBonus();
-            aNewBall->SetGapBonus(0, 0);
-        }
-        else
-        {
-            aNewBall->SetSuckPending(true);
-            if (aNextBall->GetSuckCount() <= 0)
+            if (aPrevBall != NULL &&
+                !aPrevBall->GetCollidesWithNext() &&
+                aPrevBall->GetType() == aNewBall->GetType() &&
+                aPrevBall->GetBullet() == NULL &&
+                aPrevBall->GetClearCount() == 0)
             {
-                aNextBall->SetSuckCount(1);
+                aNewBall->SetSuckPending(true);
+                aNewBall->SetSuckCount(1);
+            }
+            else if (aNextBall != NULL &&
+                     !aNextBall->GetCollidesWithNext() &&
+                     aNextBall->GetType() == aNewBall->GetType() &&
+                     aNextBall->GetBullet() == NULL &&
+                     aNextBall->GetClearCount() == 0)
+            {
+                aNewBall->SetSuckPending(true);
+                if (aNextBall->GetSuckCount() <= 0)
+                {
+                    aNextBall->SetSuckCount(1);
+                }
+            }
+            else
+            {
+                mBoard->ResetInARowBonus();
+                aNewBall->SetGapBonus(0, 0);
             }
         }
+    }
+    else
+    {
+        theBulletItr++;
     }
 }
 
@@ -1960,7 +1988,7 @@ void CurveMgr::ClearPendingSucks(Ball *theEndBall)
         return;
 
     Ball *aBall = theEndBall;
-    bool flag = true;
+    bool aCollided = true;
 
     while (aBall != NULL)
     {
@@ -1979,10 +2007,10 @@ void CurveMgr::ClearPendingSucks(Ball *theEndBall)
 
         if (!aBall->GetCollidesWithNext())
         {
-            flag = false;
+            aCollided = false;
         }
 
-        if (!flag && aBall->GetSuckCount() != 0)
+        if (!aCollided && aBall->GetSuckCount() != 0)
         {
             return;
         }

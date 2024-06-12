@@ -828,12 +828,18 @@ void TransitionMgr::DoLevelUp()
     mState = TransitionState_Bonus;
     mStateCount = 0;
     mDoStageUp = mBoard->mNextLevelDesc->mStage != mBoard->mLevelDesc->mStage;
-    mDoTempleUp = false;
-    if (!mBoard->IsPracticeMode() && mDoStageUp)
+
+    if (mBoard->IsPracticeMode() || !mDoStageUp)
+    {
+        mDoTempleUp = false;
+    }
+    else
     {
         int aStage = mBoard->mLevelDesc->mStage;
         if ((aStage + 1) % 3 == 0 || aStage == 12)
             mDoTempleUp = true;
+        else
+            mDoTempleUp = false;
     }
 }
 

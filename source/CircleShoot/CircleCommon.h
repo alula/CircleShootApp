@@ -9,6 +9,7 @@
 
 #define MAX_PRIORITY 5
 #define MAX_BALL_COLORS 6
+#define MAX_GAP_SIZE 300
 
 // From looking at SexyAppFramework code it seems like this specific PI constant was just copy-pasted everywhere.
 // We need this specific one instead of SEXY_PI for accurate codegen.
@@ -111,7 +112,7 @@ namespace Sexy
 
     void DrawCheckboxText(Graphics *g, std::string const &theText, Widget *theWidget);
     void SetupButton(DialogButton *theButton, int numCols);
-    CircleButton *MakeButton(int id, ButtonListener *theListener, std::string const &label, int flags, Image *image, int a6);
+    CircleButton *MakeButton(int id, ButtonListener *theListener, std::string const &label, int flags, Image *image, int numCols);
     void SetupDialog(Dialog *theDialog, int theMinWidth);
     MemoryImage *CutoutImageFromAlpha(MemoryImage *theBackgroundImage, MemoryImage *theAlpha, int x, int y);
     void FillCircle(Graphics *g, int x, int y, int theRadius);
