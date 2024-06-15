@@ -14,6 +14,26 @@ namespace Sexy
 
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
+    struct UFOMove
+    {
+        int mUpdateCnt;
+        int mDuration;
+        IntPoint mStartPos;
+        IntPoint mEndPos;
+    };
+    typedef std::list<UFOMove> UFOMoveList;
+
+    struct UFOScale
+    {
+        int mUpdateCnt;
+        int mDuration;
+        float mStartScale;
+        float mEndScale;
+    };
+    typedef std::list<UFOScale> UFOScaleList;
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
     class MainMenu : public Widget, public ButtonListener
     {
     private:
@@ -31,7 +51,7 @@ namespace Sexy
         virtual void MouseMove(int x, int y);
         virtual void MouseDown(int x, int y, int theClickCount);
         void SyncProfile();
-        void AddUFOMove(IntPoint const &unk1, IntPoint const &unk2, int unk3, int unk4);
+        void AddUFOMove(IntPoint const &theStartPos, IntPoint const &theEndPos, int theDuration, int theStagger);
         void DoUFO();
         void UpdateUFOMove();
         void UpdateUFOScale();
@@ -46,24 +66,21 @@ namespace Sexy
         HyperlinkWidget *mNotYouLink;
         MainMenuOverlay *mMainMenuOverlay;
         MemoryImage *mEyesImage;
-        Image *unk78;
-        SoundInstance *mUfoSound;
+        Image *mUFOImage;
+        SoundInstance *mUFOSound;
         FPoint mEyeLeft;
         FPoint mEyeRight;
         Point mEyeCutoutPos;
         bool mShowHat;
-        Point unkAC;
-        void *unkB4;
-        void *unkB8;
-        void *unkBC;
-        void *unkC0;
+        Point mUFOPoint;
+        Point mUFOPoint2;
+        int mUFOState;
+        int mUFOStateCount;
         int mFlash;
-        float unkC8;
-        bool unkCC;
-        void *mUFOMoveList;
-        void *unkD4;
-        void *mUFOScaleList;
-        void *unkDC;
+        float mUFOScale;
+        bool mDoUFOEasterEgg;
+        UFOMoveList mUFOMoveList;
+        UFOScaleList mUFOScaleList;
 
         static bool mMoveEyes;
     };

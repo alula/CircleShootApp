@@ -8,8 +8,11 @@
 #include <SexyAppFramework/Font.h>
 #include <SexyAppFramework/ImageFont.h>
 #include <SexyAppFramework/WidgetManager.h>
+#include <SexyAppFramework/Checkbox.h>
+#include <SexyAppFramework/DialogButton.h>
 
 #include "Board.h"
+#include "DataSync.h"
 #include "CircleCommon.h"
 #include "CircleShootApp.h"
 #include "LoadingScreen.h"
@@ -18,6 +21,9 @@
 #include "StatsDialog.h"
 #include "AdventureScreen.h"
 #include "PracticeScreen.h"
+#include "MoreGamesScreen.h"
+#include "CreditsScreen.h"
+#include "HelpScreen.h"
 #include "LevelParser.h"
 #include "ProfileMgr.h"
 #include "HighScoreMgr.h"
@@ -51,7 +57,7 @@ CircleShootApp::CircleShootApp()
     mHelpScreen = NULL;
     mMoreGamesScreen = NULL;
     mLoadingScreen = NULL;
-    mUnk11 = NULL;
+    mCreditsScreen = NULL;
 
     mSongId = 0;
     mLastSong = -1;
@@ -228,6 +234,27 @@ Dialog *CircleShootApp::NewDialog(int theDialogId,
     return aDialog;
 }
 
+bool CircleShootApp::KillDialog(int theDialogId)
+{
+    Widget *aDialog = GetDialog(theDialogId);
+    if (aDialog)
+    {
+        mWidgetMover->RemoveWidget(aDialog);
+    }
+
+    if (!SexyAppBase::KillDialog(theDialogId))
+    {
+        return false;
+    }
+
+    if (mDialogMap.empty())
+    {
+        mWidgetManager->SetFocus(mBoard);
+    }
+
+    return true;
+}
+
 void CircleShootApp::MakeBoard()
 {
     mDidNextTempleDialog = false;
@@ -245,7 +272,7 @@ void CircleShootApp::CleanupWidgets()
 {
     if (mAdventureScreen)
     {
-        mWidgetMover->RemoveWidget(mAdventureScreen);
+        mWidgetMover->SafeDeleteWidget(mAdventureScreen);
         mAdventureScreen = NULL;
     }
 
@@ -260,8 +287,7 @@ void CircleShootApp::CleanupWidgets()
         mBoard->WaitForLoadingThread();
         if (mBoard->NeedSaveGame())
         {
-            // todo: Sexy::GetSaveGameName(bool, mProfile->mId);
-            // todo: mBoard->SaveGame();
+            mBoard->SaveGame(GetSaveGameName(mBoard->IsPracticeMode(), mProfile->mId));
         }
 
         mWidgetMover->SafeDeleteWidget(mBoard);
@@ -298,10 +324,10 @@ void CircleShootApp::CleanupWidgets()
         mHelpScreen = NULL;
     }
 
-    if (mUnk11)
+    if (mCreditsScreen)
     {
-        mWidgetMover->SafeDeleteWidget(mUnk11);
-        mUnk11 = NULL;
+        mWidgetMover->SafeDeleteWidget(mCreditsScreen);
+        mCreditsScreen = NULL;
     }
 }
 
@@ -318,6 +344,15 @@ void CircleShootApp::ShowLoadingScreen()
 
 void CircleShootApp::ShowHelpScreen()
 {
+    mHelpScreen = new HelpScreen();
+    mHelpScreen->Resize(0, 0, mWidth, mHeight);
+    mWidgetManager->AddWidget(mHelpScreen);
+    mWidgetManager->SetFocus(mHelpScreen);
+    if (mBoard)
+    {
+        mBoard->Pause(true, true);
+    }
+    ClearUpdateBacklog();
 }
 
 void CircleShootApp::StartAdventureGame(int theStage)
@@ -357,15 +392,71 @@ void CircleShootApp::StartPracticeGame(const std::string &theLevelName, int theS
 
 bool CircleShootApp::CheckSaveGame(bool showConfirm)
 {
-    return false;
+    std::string aSaveGameName = GetSaveGameName(mIsPractice, mProfile->mId);
+    if (!ReadBufferFromFile(aSaveGameName, &mSaveGameBuffer))
+        return false;
+
+    DataReader aReader;
+    aReader.OpenMemory(mSaveGameBuffer.GetDataPtr(), mSaveGameBuffer.GetDataLen(), false);
+    if (aReader.ReadLong() != gSaveGameVersion)
+    {
+        EraseFile(aSaveGameName);
+        mSaveGameBuffer.Clear();
+        return false;
+    }
+
+    std::string aVerboseLevelString;
+    std::string aLevelDisplayName;
+    bool aIsPractice = aReader.ReadBool();
+    aReader.ReadString(aVerboseLevelString);
+    aReader.ReadString(aLevelDisplayName);
+    int aScore = aReader.ReadLong();
+    if (showConfirm)
+    {
+        if (aScore > 0)
+        {
+            DoConfirmContinueDialog(aVerboseLevelString, aLevelDisplayName, aScore);
+        }
+        else
+        {
+            EraseFile(aSaveGameName);
+            mSaveGameBuffer.Clear();
+        }
+    }
+    else
+    {
+        EraseFile(aSaveGameName);
+    }
+
+    return true;
 }
 
 void CircleShootApp::StartSavedGame(bool showConfirm)
 {
+    MakeBoard();
+    mBoard->SetStartLevel(0);
+    mBoard->LoadGame(mSaveGameBuffer);
+    mSaveGameBuffer.Clear();
+    if (!showConfirm)
+    {
+        if (mProfile->mShowHelpScreen)
+        {
+            ShowHelpScreen();
+        }
+        else
+        {
+            DoGetReadyDialog();
+        }
+    }
+    PlaySong(0, true, 0.01);
 }
 
 void CircleShootApp::SaveProfile()
 {
+    if (mProfile)
+    {
+        mProfile->SaveDetails();
+    }
 }
 
 void CircleShootApp::LoadingThreadProc()
@@ -483,7 +574,7 @@ void CircleShootApp::FinishStatsDialog(bool)
     }
     else if (mBoard->IsPracticeMode())
     {
-        ShowPracticeScreeen(false);
+        ShowPracticeScreen(false);
     }
     else if (!mBoard->IsWinning())
     {
@@ -495,7 +586,7 @@ void CircleShootApp::FinishStatsDialog(bool)
     }
     else
     {
-        // ShowCreditsScreen(true);
+        ShowCreditsScreen(true);
     }
 }
 
@@ -552,7 +643,42 @@ void CircleShootApp::FinishNextTempleDialog(bool save)
     }
 }
 
+void CircleShootApp::DoUserDialog()
+{
+}
+
 void CircleShootApp::DoCreateUserDialog()
+{
+}
+
+void CircleShootApp::DoRegisterDialog()
+{
+}
+
+void CircleShootApp::DoCheckForUpdatesDialog()
+{
+}
+
+void CircleShootApp::DoConfirmMainMenuDialog()
+{
+    if (mBoard && mBoard->NeedSaveGame())
+    {
+        Dialog *aDialog = DoDialog(DialogType_ConfirmMainMenu, true, "Leave Game?", "Your game session will be saved upon leaving. Do you want to continue?", "", Dialog::BUTTONS_OK_CANCEL);
+        aDialog->mYesButton->mLabel = "Leave";
+
+        OptionsDialog *aDialogOptions = (OptionsDialog *)GetDialog(DialogType_Options);
+        if (aDialogOptions)
+        {
+            aDialog->Resize(aDialog->mX, aDialogOptions->mY + aDialogOptions->mHeight - aDialog->mHeight, aDialog->mWidth, aDialog->mHeight);
+        }
+    }
+    else
+    {
+        ShowMainMenu();
+    }
+}
+
+void CircleShootApp::FinishUpdateDialogs(int a1, bool a2)
 {
 }
 
@@ -577,9 +703,42 @@ void CircleShootApp::DoOptionsDialog()
         mBoard->Pause(true, true);
     }
 
-    OptionsDialog *dialog = new OptionsDialog(mBoard != NULL);
+    Dialog *dialog = new OptionsDialog(mBoard != NULL);
     SetupDialog(dialog, 400);
     AddDialog(DialogType_Options, dialog);
+}
+
+void CircleShootApp::DoConfirmContinueDialog(const std::string &theVerboseLevelString, const std::string &theDisplayName, int theScore)
+{
+    std::string aScore = Sexy::StrFormat("%s (%s)\r\nScore: %d\r\n", theVerboseLevelString.c_str(), theDisplayName.c_str(), theScore);
+    std::string aText = "Your game was saved when you quit.  If you do not continue now, the game will be lost.\r\n"
+                        "\r\n"
+                        "Do you want to continue your last game?"
+                        "\r\n"
+                        "\r\n" +
+                        aScore;
+
+    Dialog *aDialog = NewDialog(DialogType_ConfirmContinue, true, "CONTINUE?", aText, "", Dialog::BUTTONS_OK_CANCEL);
+
+    aDialog->mYesButton->mLabel = "Continue";
+    aDialog->mNoButton->mLabel = "New Game";
+
+    AddDialog(DialogType_ConfirmContinue, aDialog);
+}
+
+void CircleShootApp::DoGetReadyDialog()
+{
+    if (mDialogMap.empty())
+    {
+        DoDialog(DialogType_GetReady, true, "GO", "", "Get Ready!", Dialog::BUTTONS_FOOTER);
+        if (mBoard)
+        {
+            mBoard->Pause(true, true);
+        }
+
+        mBoard->SetShowBallsDuringPause(true);
+        mBoard->SetFullPauseFade();
+    }
 }
 
 void CircleShootApp::PlaySong(int id, bool fade, double fadeSpeed)
@@ -604,18 +763,47 @@ void CircleShootApp::PlaySong(int id, bool fade, double fadeSpeed)
     }
 }
 
+void CircleShootApp::FinishGetReadyDialog()
+{
+    KillDialog(DialogType_GetReady);
+    if (mBoard)
+    {
+        mBoard->Pause(false, true);
+    }
+}
+
+void CircleShootApp::FinishConfirmContinueDialog(bool startGame)
+{
+    KillDialog(DialogType_ConfirmContinue);
+
+    std::string aSaveGameName = GetSaveGameName(mIsPractice, mProfile->mId);
+    EraseFile(aSaveGameName);
+
+    if (startGame)
+    {
+        StartSavedGame(true);
+    }
+    else if (mIsPractice)
+    {
+        ShowPracticeScreen(false);
+    }
+    else
+    {
+        ShowAdventureScreen(false, false);
+    }
+}
+
 void CircleShootApp::FinishOptionsDialog(bool saveSettings)
 {
-    Sexy::Dialog *dialog = GetDialog(0);
+    Sexy::OptionsDialog *dialog = (OptionsDialog *)GetDialog(DialogType_Options);
     if (dialog != NULL)
     {
         if (saveSettings)
         {
-            // todo
-            bool fullscreen = false;
-            bool acceleration = true;
+            bool fullscreen = dialog->mFullScreenCheckbox->IsChecked();
+            bool acceleration = dialog->m3DAccelCheckbox->IsChecked();
             SwitchScreenMode(fullscreen != true, acceleration);
-            bool cursorsEnabled = true;
+            bool cursorsEnabled = dialog->mCustomCursorsCheckbox->IsChecked();
             EnableCustomCursors(cursorsEnabled);
             ClearUpdateBacklog();
         }
@@ -625,6 +813,15 @@ void CircleShootApp::FinishOptionsDialog(bool saveSettings)
         {
             mBoard->Pause(false, true);
         }
+    }
+}
+
+void CircleShootApp::FinishConfirmMainMenuDialog(bool mainMenu)
+{
+    KillDialog(DialogType_ConfirmMainMenu);
+    if (mainMenu)
+    {
+        ShowMainMenu();
     }
 }
 
@@ -658,13 +855,13 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishConfirmDeleteUserDialog(true);
             return true;
         case 2013:
-            // FinishConfirmContinueDialog(true);
+            FinishConfirmContinueDialog(true);
             return true;
         case 2014:
             FinishStatsDialog(true);
             return true;
         case 2015:
-            // FinishGetReadyDialog(true);
+            FinishGetReadyDialog();
             return true;
         case 2016:
             FinishNextTempleDialog(true);
@@ -673,7 +870,7 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishRegisterDialog(true);
             return true;
         case 2020:
-            // FinishConfirmMainMenuDialog(true);
+            FinishConfirmMainMenuDialog(true);
             return true;
         case 2021:
             FinishConfirmQuitDialog(true);
@@ -708,7 +905,7 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishConfirmDeleteUserDialog(false);
             return true;
         case 3013:
-            // FinishConfirmContinueDialog(false);
+            FinishConfirmContinueDialog(false);
             return true;
         case 3014:
             FinishStatsDialog(false);
@@ -720,7 +917,7 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishRegisterDialog(false);
             return true;
         case 3020:
-            // FinishConfirmMainMenuDialog(false);
+            FinishConfirmMainMenuDialog(false);
             return true;
         case 3021:
             FinishConfirmQuitDialog(false);
@@ -805,7 +1002,7 @@ void CircleShootApp::ShowAdventureScreen(bool fromMenu, bool revealTemple)
     ClearUpdateBacklog();
 }
 
-void CircleShootApp::ShowPracticeScreeen(bool fromMenu)
+void CircleShootApp::ShowPracticeScreen(bool fromMenu)
 {
     mIsPractice = true;
     if (fromMenu && CheckSaveGame(true))
@@ -831,6 +1028,39 @@ void CircleShootApp::ShowPracticeScreeen(bool fromMenu)
     ClearUpdateBacklog();
 }
 
+void CircleShootApp::ShowCreditsScreen(bool)
+{
+}
+
 void CircleShootApp::ShowMoreGamesScreen()
 {
+}
+
+void CircleShootApp::EndHelpScreen()
+{
+    if (mHelpScreen)
+    {
+        mWidgetMover->SafeDeleteWidget(mHelpScreen);
+        mHelpScreen = NULL;
+    }
+
+    if (mBoard)
+    {
+        mWidgetManager->SetFocus(mBoard);
+
+        if (mBoard)
+        {
+            mBoard->Pause(false, true);
+        }
+
+        if (mBoard->IsSavedGame())
+        {
+            DoGetReadyDialog();
+        }
+    }
+}
+
+void CircleShootApp::ReturnToMainMenu()
+{
+    DoConfirmMainMenuDialog();
 }

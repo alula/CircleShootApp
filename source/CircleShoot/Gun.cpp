@@ -11,6 +11,7 @@
 #include "Bullet.h"
 #include "Gun.h"
 #include "Res.h"
+#include "DataSync.h"
 
 #include <math.h>
 
@@ -50,6 +51,71 @@ Gun::~Gun()
 
 void Gun::SyncState(DataSync &theSync)
 {
+    DataReader *aReader = theSync.mReader;
+    DataWriter *aWriter = theSync.mWriter;
+
+    if (aReader)
+    {
+        EmptyBullets();
+
+        bool aHasBullet = aReader->ReadBool();
+        if (aHasBullet)
+        {
+            mBullet = new Bullet();
+            mBullet->SyncState(theSync);
+        }
+
+        bool aHasNextBullet = aReader->ReadBool();
+        if (aHasNextBullet)
+        {
+            mNextBullet = new Bullet();
+            mNextBullet->SyncState(theSync);
+        }
+    }
+    else
+    {
+        aWriter->WriteBool(mBullet != NULL);
+        if (mBullet)
+            mBullet->SyncState(theSync);
+
+        aWriter->WriteBool(mNextBullet != NULL);
+        if (mNextBullet)
+            mNextBullet->SyncState(theSync);
+    }
+
+    theSync.SyncFloat(mAngle);
+    theSync.SyncShort(mCenterX);
+    theSync.SyncShort(mCenterY);
+    theSync.SyncShort(mRecoilX1);
+    theSync.SyncShort(mRecoilY1);
+    theSync.SyncShort(mRecoilX2);
+    theSync.SyncShort(mRecoilY2);
+    theSync.SyncShort(mRecoilCount);
+    theSync.SyncFloat(mStatePercent);
+    theSync.SyncFloat(mFireVel);
+    theSync.SyncShort(mBlinkCount);
+    theSync.SyncBool(mWink);
+    theSync.SyncFloat(mCachedGunAngle);
+
+    if (aReader)
+    {
+        theSync.SyncBytes(&mState, 4);
+#ifdef CIRCLE_ENDIAN_SWAP_ENABLED
+        mState = (GunState)ByteSwap((unsigned int)GunState);
+#endif
+    }
+    else
+    {
+#ifdef CIRCLE_ENDIAN_SWAP_ENABLED
+        mState = (GunState)ByteSwap((unsigned int)GunState);
+#endif
+        theSync.SyncBytes(&mState, 4);
+    }
+
+    if (aReader)
+    {
+        CreateCachedGunImage();
+    }
 }
 
 bool Gun::NeedsReload()

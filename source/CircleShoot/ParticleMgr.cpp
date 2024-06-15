@@ -98,8 +98,8 @@ void ParticleMgr::Clear()
 
 void ParticleMgr::AddSparkle(float x, float y, float vx, float vy, int thePriority, int theDuration, int theStagger, uint theColor)
 {
-    mSparkleList->push_back(Sparkle());
-    Sparkle &aSparkle = mSparkleList->back();
+    mSparkleList[thePriority].push_back(Sparkle());
+    Sparkle &aSparkle = mSparkleList[thePriority].back();
 
     aSparkle.x = x - ((Sexy::IMAGE_SPARKLE->mWidth / Sexy::IMAGE_SPARKLE->mNumCols) / 2);
     aSparkle.y = y - (Sexy::IMAGE_SPARKLE->mHeight / 2);

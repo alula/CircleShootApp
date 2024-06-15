@@ -7,18 +7,22 @@ add_executable(Zuma WIN32
     Board.cpp
     Bullet.cpp
     CircleButton.cpp
+    CircleCheckbox.cpp
     CircleCommon.cpp
     CircleDialog.cpp
     CircleShootApp.cpp
+    CreditsScreen.cpp
     CurveData.cpp
     CurveMgr.cpp
     DataSync.cpp
     Gun.cpp
+    HelpScreen.cpp
     HighScoreMgr.cpp
     LevelParser.cpp
     LoadingScreen.cpp
     Main.cpp
     MainMenu.cpp
+    MoreGamesScreen.cpp
     OptionsDialog.cpp
     ParticleMgr.cpp
     PracticeScreen.cpp

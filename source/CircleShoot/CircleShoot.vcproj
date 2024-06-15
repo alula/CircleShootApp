@@ -132,6 +132,9 @@
 				RelativePath="CircleButton.cpp">
 			</File>
 			<File
+				RelativePath="CircleCheckbox.cpp">
+			</File>
+			<File
 				RelativePath="CircleCommon.cpp">
 			</File>
 			<File
@@ -147,6 +150,9 @@
 				RelativePath="CurveMgr.cpp">
 			</File>
 			<File
+				RelativePath="CreditsScreen.cpp">
+			</File>
+			<File
 				RelativePath="DataSync.cpp">
 			</File>
 			<File
@@ -154,6 +160,9 @@
 			</File>
 			<File
 				RelativePath="HighScoreMgr.cpp">
+			</File>
+			<File
+				RelativePath="HelpScreen.cpp">
 			</File>
 			<File
 				RelativePath="LevelParser.cpp">
@@ -166,6 +175,9 @@
 			</File>
 			<File
 				RelativePath="MainMenu.cpp">
+			</File>
+			<File
+				RelativePath="MoreGamesScreen.cpp">
 			</File>
 			<File
 				RelativePath="OptionsDialog.cpp">
@@ -226,6 +238,9 @@
 				RelativePath="CircleButton.h">
 			</File>
 			<File
+				RelativePath="CircleCheckbox.h">
+			</File>
+			<File
 				RelativePath="CircleCommon.h">
 			</File>
 			<File
@@ -233,6 +248,9 @@
 			</File>
 			<File
 				RelativePath="CircleShootApp.h">
+			</File>
+			<File
+				RelativePath="CreditsScreen.h">
 			</File>
 			<File
 				RelativePath="CurveData.h">
@@ -250,6 +268,9 @@
 				RelativePath="HighScoreMgr.h">
 			</File>
 			<File
+				RelativePath="HelpScreen.h">
+			</File>
+			<File
 				RelativePath="LevelParser.h">
 			</File>
 			<File
@@ -257,6 +278,9 @@
 			</File>
 			<File
 				RelativePath="MainMenu.h">
+			</File>
+			<File
+				RelativePath="MoreGamesScreen.h">
 			</File>
 			<File
 				RelativePath="OptionsDialog.h">

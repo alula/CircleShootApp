@@ -180,7 +180,24 @@ Board::Board(CircleShootApp *theApp)
 
 Board::~Board()
 {
+    WaitForLoadingThread();
+    DeleteBullets();
+    for (int i = 0; i < MAX_CURVES; i++)
+    {
+        delete mCurveMgr[i];
+        delete mNextCurveMgr[i];
+    }
+    delete mSpriteMgr;
+    delete mNextSpriteMgr;
+    delete mParticleMgr;
+    delete mTransitionMgr;
+    delete mSoundMgr;
     delete mGun;
+    delete mLevelDesc;
+    delete mNextLevelDesc;
+    delete mMenuButton;
+    delete mContinueButton;
+    delete mOverlayWidget;
 }
 
 void Board::StaticLoadProc(void *theData)
@@ -226,7 +243,7 @@ void Board::LoadProc()
     }
     else if (mLoadingThreadParam == 1)
     {
-        LevelDesc* aLevelDesc = mLevelDesc;
+        LevelDesc *aLevelDesc = mLevelDesc;
         if (aLevelDesc->mBackgroundAlpha.empty())
             aLevelDesc = &mApp->mLevelParser->GetBackgroundTransition();
 
@@ -515,10 +532,10 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
             mTreasureZoomX = mCurTreasure->x;
             mTreasureZoomY = mCurTreasure->y;
 
-            for (int i = 0; i < 10; i ++)
+            for (int i = 0; i < 10; i++)
             {
-                float vx = cosf(i * 360/10 * SEXY_PI / 180.0f);
-                float vy = sinf(i * 360/10 * SEXY_PI / 180.0f);
+                float vx = cosf(i * 360 / 10 * SEXY_PI / 180.0f);
+                float vy = sinf(i * 360 / 10 * SEXY_PI / 180.0f);
                 uint color = gBrightBallColors[Sexy::Rand() % 6];
 
                 mParticleMgr->AddSparkle(mCurTreasure->x + vx * 16.0f, mCurTreasure->y + vx * 16.0f, 2 * vx, 2 * vy, 5, 0, Sexy::Rand() % 5, color);
@@ -636,29 +653,29 @@ void Board::UpdatePlaying()
     if (aScoreDiff > 0)
     {
         int aScoreRemaining = mScoreTarget - mScore;
-        if (aScoreRemaining >= 0)
+        if (aScoreRemaining < 0)
         {
-            mTargetBarSize = 256 - (aScoreRemaining * 256 / aScoreDiff);
-        }
-        else if (mLevelEndFrame != 0)
-        {
-            if (mStateCount - 3000 == mLevelEndFrame)
+            if (mLevelEndFrame != 0)
             {
-                for (int i = 0; i < mNumCurves; i++)
+                if (mStateCount - 3000 == mLevelEndFrame)
                 {
-                    mLevelDesc->mCurveDesc[i].mPowerUpFreq[0] = 500;
-                    mLevelDesc->mCurveDesc[i].mPowerUpFreq[1] = 0;
-                    mLevelDesc->mCurveDesc[i].mPowerUpFreq[2] = 0;
-                    mLevelDesc->mCurveDesc[i].mPowerUpFreq[3] = 0;
-                    mLevelDesc->mCurveDesc[i].mAccelerationRate = 0.0003;
+                    for (int i = 0; i < mNumCurves; i++)
+                    {
+                        mLevelDesc->mCurveDesc[i].mPowerUpFreq[PowerType_Bomb] = 500;
+                        mLevelDesc->mCurveDesc[i].mPowerUpFreq[PowerType_SlowDown] = 0;
+                        mLevelDesc->mCurveDesc[i].mPowerUpFreq[PowerType_Accuracy] = 0;
+                        mLevelDesc->mCurveDesc[i].mPowerUpFreq[PowerType_MoveBackwards] = 0;
+                        mLevelDesc->mCurveDesc[i].mAccelerationRate = 0.0003;
+                    }
                 }
             }
+            else if (mBallColorMap.size() == 2)
+            {
+                mLevelEndFrame = mStateCount;
+            }
         }
-        else if (mBallColorMap.size() == 2)
-        {
-            mLevelEndFrame = mStateCount;
-            mTargetBarSize = 256 - (aScoreRemaining * 256 / aScoreDiff);
-        }
+
+        mTargetBarSize = 256 - (aScoreRemaining * 256 / aScoreDiff);
     }
 
     for (int i = 0; i < mNumCurves; ++i)
@@ -1521,16 +1538,21 @@ void Board::ButtonDepress(int theId)
         if (aStage == 13)
         {
             mApp->DoStatsDialog(true, true);
-            // todo???
+            if (!mApp->mProfile->mHasWon)
+            {
+                mApp->mProfile->mHasWon = true;
+                mApp->SaveProfile();
+            }
         }
-        else if (aStage == 12 || 12 <= mMaxStage)
+        else if (aStage == 12 || aStage <= mMaxStage)
         {
             Reset(false, false);
         }
         else
         {
             mVerboseLevelString = Sexy::StrFormat("LeVeL %d-%d", mNextLevelDesc->mStage + 1, mNextLevelDesc->mLevel + 1);
-            // todo
+            SaveGame(GetSaveGameName(false, mApp->mProfile->mId));
+            mApp->ShowAdventureScreen(false, true);
         }
     }
 }
@@ -1772,6 +1794,7 @@ void Board::SyncState(DataSync &theSync)
 
     theSync.SyncLong(mScore);
     theSync.SyncLong(mScoreDisplay);
+    theSync.SyncLong(mStateCount);
     theSync.SyncShort(mLives);
     theSync.SyncLong(mCurBarSize);
     theSync.SyncLong(mTargetBarSize);
@@ -1944,9 +1967,12 @@ void Board::SaveGame(const std::string &theFilePath)
     aUnkState = -1;
 }
 
+// probably not original code, not present in known versions.
 void Board::LoadGame(const std::string &theFilePath)
 {
-    // Stub, code not present in executable.
+    Buffer aBuffer;
+    if (mApp->ReadBufferFromFile(theFilePath, &aBuffer))
+        LoadGame(aBuffer);
 }
 
 void Board::LoadGame(Buffer &theBuffer)
@@ -2075,7 +2101,7 @@ int Board::GetParBonus(int theLevelTime, int theParTime)
         return 0;
     }
 
-    return 100 * (((1.0f - ((float)theLevelTime / theParTime)) * 25000.0f) / 100) + 100;
+    return 100 * int(((1.0f - ((float)theLevelTime / theParTime)) * 25000.0f) / 100) + 100;
 }
 
 void Board::ResetInARowBonus()

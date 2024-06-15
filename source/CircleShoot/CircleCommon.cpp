@@ -9,12 +9,16 @@
 #include <SexyAppFramework/Graphics.h>
 #include <SexyAppFramework/MemoryImage.h>
 #include <SexyAppFramework/SexyAppBase.h>
+#include <SexyAppFramework/ResourceManager.h>
 
 #include "Board.h"
 #include "CircleShootApp.h"
 #include "CircleCommon.h"
 #include "CircleButton.h"
+#include "CircleCheckbox.h"
 #include "Res.h"
+
+#include <map>
 
 using namespace Sexy;
 
@@ -98,6 +102,33 @@ int Sexy::ThreadRand()
     {
         return gThreadRand.NextNoAssert();
     }
+}
+
+typedef std::map<std::string, int> ResourceCountMap;
+ResourceCountMap gResourceCountMap;
+
+void Sexy::LoadResourceGroup(const char *theGroup)
+{
+    int aRefCount = gResourceCountMap[theGroup]++;
+
+    if (aRefCount != 0)
+        return;
+
+    if (!gSexyAppBase->mResourceManager->LoadResources(theGroup) ||
+        !Sexy::ExtractResourcesByName(gSexyAppBase->mResourceManager, theGroup))
+    {
+        gSexyAppBase->ShowResourceError(true);
+    }
+}
+
+void Sexy::FreeResourceGroup(const char *theGroup)
+{
+    int aRefCount = gResourceCountMap[theGroup]--;
+
+    if (aRefCount != 0)
+        return;
+
+    gSexyAppBase->mResourceManager->DeleteResources(theGroup);
 }
 
 void Sexy::MirrorPoint(float &x, float &y, MirrorType theMirror)
@@ -268,6 +299,53 @@ CircleButton *Sexy::MakeButton(int id, ButtonListener *theListener, std::string 
     }
 
     return theButton;
+}
+
+CircleCheckbox *Sexy::MakeCheckbox(int id, CheckboxListener *theListener)
+{
+    CircleCheckbox *theCheckbox = new CircleCheckbox(Sexy::IMAGE_DIALOG_CHECKBOX, Sexy::IMAGE_DIALOG_CHECKBOX, id, theListener);
+    theCheckbox->mCheckedRect.mHeight = Sexy::IMAGE_DIALOG_CHECKBOX->mHeight;
+    theCheckbox->mCheckedRect.mWidth = Sexy::IMAGE_DIALOG_CHECKBOX->mWidth / 2;
+    theCheckbox->mCheckedRect.mY = 0;
+    theCheckbox->mCheckedRect.mX = 0;
+    theCheckbox->mUncheckedRect.mHeight = Sexy::IMAGE_DIALOG_CHECKBOX->mHeight;
+    theCheckbox->mUncheckedRect.mWidth = Sexy::IMAGE_DIALOG_CHECKBOX->mWidth / 2;
+    theCheckbox->mUncheckedRect.mY = 0;
+    theCheckbox->mUncheckedRect.mX = Sexy::IMAGE_DIALOG_CHECKBOX->mWidth / 2;
+
+    theCheckbox->Resize(0, 0, Sexy::IMAGE_DIALOG_CHECKBOX->mWidth / 2, Sexy::IMAGE_DIALOG_CHECKBOX->mHeight);
+
+    theCheckbox->mHasTransparencies = true;
+    theCheckbox->mHasAlpha = true;
+    theCheckbox->mClickSound = Sexy::SOUND_BUTTON2;
+
+    return theCheckbox;
+}
+
+void Sexy::DrawCheckboxText(Graphics *g, std::string const &theText, Widget *theWidget)
+{
+    int aX = theWidget->mX + theWidget->mWidth - g->mTransX;
+    int aY = theWidget->mY - g->mTransY;
+
+    int aStrWidth = g->GetFont()->StringWidth(theText);
+    g->DrawString(theText, aX, aY + 25);
+
+    Image *aImage = Sexy::IMAGE_DIALOG_CHECKBOXLINE;
+    int aStartX = aX - 5;
+    int aEndX = aStrWidth + 5;
+    int aY2 = aY + 29;
+
+    for (int i = 0; i < aEndX; i += aImage->GetWidth())
+    {
+        Rect aRect(0, 0, aEndX - i, aImage->GetHeight());
+        int aWidth = aEndX - i;
+        if (aWidth > aImage->GetWidth())
+            aWidth = aImage->GetWidth();
+        aRect.mWidth = aWidth;
+        g->DrawImage(aImage, i + aStartX, aY2, aRect);
+    }
+
+    g->DrawImage(Sexy::IMAGE_DIALOG_CHECKBOXCAP, aEndX + aStartX, aY2);
 }
 
 void Sexy::SetupDialog(Dialog *theDialog, int theMinWidth)
@@ -470,4 +548,14 @@ int Sexy::BoardGetTickCount()
         aTickCount = 10 * aBoard->GetStateCount();
 
     return aTickCount;
+}
+
+std::string Sexy::GetSaveGameName(bool practice, int userId)
+{
+    const char *aName = "prc";
+    if (!practice)
+    {
+        aName = "adv";
+    }
+    return Sexy::StrFormat("userdata/%s%d.sav", aName, userId);
 }

@@ -897,7 +897,7 @@ void CurveMgr::SyncState(DataSync &theSync)
         {
             Ball *aBall = new Ball();
             aBall->SyncState(theSync);
-            mBallList.push_back(aBall);
+            aBall->InsertInList(mBallList, mBallList.end());
         }
     }
     else
@@ -1652,7 +1652,7 @@ void CurveMgr::UpdateSuckingBalls()
             if (aNextBall->GetBackwardsCount() == 0)
             {
                 aNextBall->SetBackwardsCount(30);
-                float aBackwardsSpeed = aNextBall->GetComboCount() * 1.5f;
+                float aBackwardsSpeed = aBall->GetComboCount() * 1.5f;
 
                 if (aBackwardsSpeed <= 0.5f)
                 {
@@ -1784,10 +1784,9 @@ void CurveMgr::AdvanceMergingBullet(BulletList::iterator &theBulletItr)
 
         mWayPointMgr->FindFreeWayPoint(aBul, aBul->GetPushBall(), true, (int)f);
 
-        float aWayPoint = aBul->GetWayPoint();
-        if (aPushBall->GetWayPoint() - aWayPoint > aPercent)
+        if (aPushBall->GetWayPoint() - aBul->GetWayPoint() > aPercent)
         {
-            float anEndPoint = aPercent + aWayPoint;
+            float anEndPoint = aBul->GetWayPoint() + aPercent;
             if (anEndPoint > aPoint)
             {
                 mWayPointMgr->SetWayPoint(aPushBall, anEndPoint);
@@ -1872,7 +1871,7 @@ void CurveMgr::AdvanceMergingBullet(BulletList::iterator &theBulletItr)
                 aNewBall->SetSuckCount(1);
             }
             else if (aNextBall != NULL &&
-                     !aNextBall->GetCollidesWithNext() &&
+                     !aNewBall->GetCollidesWithNext() &&
                      aNextBall->GetType() == aNewBall->GetType() &&
                      aNextBall->GetBullet() == NULL &&
                      aNextBall->GetClearCount() == 0)

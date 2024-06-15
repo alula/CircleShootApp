@@ -239,7 +239,7 @@ void StatsDialog::Draw(Graphics *g)
 
         g->SetColor(Color(0xF8F792));
         g->DrawString(mBestTimeLeft, aCol3, aDialogTop + 4 * aLineOffset);
-        g->DrawString(mBestTimeLeft, aCol3, aDialogTop + 5 * aLineOffset);
+        g->DrawString(mBestTimeRight, aCol3, aDialogTop + 5 * aLineOffset);
 
         v34 = aDialogTop + 7 * aLineOffset;
     }

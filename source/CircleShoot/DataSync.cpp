@@ -225,12 +225,16 @@ void DataWriter::WriteString(const std::string &theString)
 
 DataSync::DataSync(DataReader &reader)
 {
+    mReader = NULL;
+    mWriter = NULL;
     ResetPointerTable();
     mReader = &reader;
 }
 
 DataSync::DataSync(DataWriter &writer)
 {
+    mReader = NULL;
+    mWriter = NULL;
     ResetPointerTable();
     mWriter = &writer;
 }
@@ -385,20 +389,21 @@ void DataSync::SyncPointers()
     {
         for (std::vector<void **>::iterator i = mPointerSyncList.begin(); i != mPointerSyncList.end(); ++i)
         {
-            long a = mReader->ReadLong();
+            int a = (int)mReader->ReadLong();
             IntToPointerMap::iterator aFindItr = mIntToPointerMap.find(a);
 
             if (aFindItr == mIntToPointerMap.end())
             {
                 throw DataReaderException();
             }
+            **i = aFindItr->second;
         }
     }
     else
     {
         for (std::vector<void **>::iterator i = mPointerSyncList.begin(); i != mPointerSyncList.end(); ++i)
         {
-            PointerToIntMap::iterator aFindItr = mPointerToIntMap.find(*i);
+            PointerToIntMap::iterator aFindItr = mPointerToIntMap.find(**i);
             assert(aFindItr != mPointerToIntMap.end());
             mWriter->WriteLong(aFindItr->second);
         }
@@ -420,6 +425,7 @@ void DataSync::RegisterPointer(void *thePtr)
     if (aPTIEntry.second)
     {
         int num = mCurPointerIndex++;
+        aPTIEntry.first->second = num;
         mIntToPointerMap[num] = thePtr;
     }
 }

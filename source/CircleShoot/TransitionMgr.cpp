@@ -16,6 +16,7 @@
 #include "CurveMgr.h"
 #include "DataSync.h"
 #include "CircleShootApp.h"
+#include "ProfileMgr.h"
 #include "Gun.h"
 #include "Board.h"
 #include "Ball.h"
@@ -387,7 +388,7 @@ void TransitionMgr::DrawLosing(Graphics *g)
 void TransitionMgr::DrawTempleComplete(Graphics *g)
 {
     g->SetColor(Color(0, 0, 50));
-    g->FillRect(0, 0, 640, 480);
+    g->FillRect(0, 0, CIRCLE_WINDOW_WIDTH, CIRCLE_WINDOW_HEIGHT);
 
     g->SetColor(Color(0xFFFF00));
     g->SetFont(Sexy::FONT_HUGE);
@@ -400,7 +401,7 @@ void TransitionMgr::DrawTempleComplete(Graphics *g)
 
     if (mStateCount > 0)
     {
-        mBoard->mGun->SetAngle(2 / 3 * SEXY_PI);
+        mBoard->mGun->SetAngle(SEXY_PI * 2.0f / 3.0f);
         mBoard->mGun->Draw(g);
     }
 
@@ -584,6 +585,82 @@ void TransitionMgr::AddLetterStamp(const std::string &theStr, int theX, int theY
 
     aStamp.mFont = theFontId;
     aStamp.mDuration = theDuration;
+}
+
+int TransitionMgr::AddTextBlurb(const std::string &theBlurb, int theX, int theY, int theStagger)
+{
+    mTextBlurbList.push_back(TextBlurb());
+    TextBlurb &aBlurb = mTextBlurbList.back();
+    int aStagger = -theStagger;
+    if (theStagger > 0)
+        aStagger = 3 - theStagger;
+    aBlurb.mCharNum = aStagger / 4;
+    aBlurb.mDelayCnt = 0;
+    aBlurb.mColor = 0xFFFF00;
+    aBlurb.mFont = Sexy::FONT_DIALOG_ID;
+    aBlurb.mPos.mX = theX;
+    aBlurb.mPos.mY = theY;
+    aBlurb.mText = theBlurb;
+
+    int aDuration = -4 * aBlurb.mCharNum;
+    int aSize = int(aBlurb.mText.size());
+    int i = 0;
+    while (i < aSize)
+    {
+        char aChar = aBlurb.mText[i++];
+        char aNextChar = (i < aSize - 1) ? aBlurb.mText[i] : 0;
+
+        if (aChar == '.' || aChar == '?' || aChar == '!')
+        {
+            aDuration += 16;
+        }
+        else if (aNextChar == '.' || aNextChar == '?' || aNextChar == '!')
+        {
+            aDuration += 16;
+        }
+        else
+        {
+            aDuration += 4;
+        }
+    }
+
+    return aDuration;
+}
+
+int TransitionMgr::AddTextBlurbWrap(const std::string &theBlurb, int theX, int theY, int theMaxWidth, int theStagger)
+{
+    Font *aFont = Sexy::GetFontById(Sexy::FONT_DIALOG_ID);
+    std::string aBlurb(theBlurb);
+
+    char pc = 0;
+    int aLineLength = 0;
+    int i = 0;
+    int aWordEnd = 0;
+    while (i < (int)aBlurb.size())
+    {
+        char c = aBlurb[i];
+        if (c == ' ')
+            aWordEnd = i;
+
+        aLineLength += aFont->CharWidthKern(c, aBlurb[i - 1]);
+        if (aLineLength > theMaxWidth)
+        {
+            theStagger = AddTextBlurb(aBlurb.substr(0, aWordEnd), theX, theY, theStagger);
+            theY += aFont->GetLineSpacing();
+            aBlurb = aBlurb.substr(aWordEnd + 1);
+            pc = 0;
+            aLineLength = 0;
+            aWordEnd = 0;
+            i = 0;
+            continue;
+        }
+
+        i++;
+        pc = c;
+    }
+
+    int aDuration = AddTextBlurb(aBlurb, theX, theY, theStagger);
+    return aDuration;
 }
 
 void TransitionMgr::DoLevelBegin(bool firstTime)
@@ -801,7 +878,93 @@ void TransitionMgr::DoStageComplete()
     }
 }
 
-void TransitionMgr::DoTempleComplete() {}
+void TransitionMgr::DoTempleComplete()
+{
+    Clear();
+    mBoard->mApp->PlaySong(32, 1, 0.01);
+    mBoard->mSoundMgr->AddSound(Sexy::SOUND_TEMPLE_COMPLETE, 20);
+    mStateCount = 0;
+    mState = TransitionState_TempleComplete;
+
+    const char *aText[5];
+    if (mBoard->mApp->mProfile->mHasWon)
+    {
+        aText[0] = "Ribbit.  (I beg to differ.)";
+        aText[1] = "Ribbit.  (I shall never give up.)";
+        aText[2] = "Ribbit.  (I will fulfill the prophecy.)";
+        aText[3] = "Ribbit?  (In space?)";
+        aText[4] = "Ribbit!  (Werd!)";
+    }
+    else
+    {
+        aText[0] = "Ribbit.";
+        aText[1] = "Ribbit.";
+        aText[2] = "Ribbit.";
+        aText[3] = "Ribbit?";
+        aText[4] = "Ribbit!";
+    }
+
+    switch (mBoard->mLevelDesc->mStage / 3)
+    {
+    case 0:
+    {
+        int aStagger = AddTextBlurbWrap("Interloper of puny!  You suppose the secret of Zuma it is possible to take the knowing so easily?  "
+                                        "No!  There is defect for your thinking!  Our cryptic hidden nature cannot be discovered "
+                                        "so directly.  Three mystery shrines protect method!  Never you will strike past them!",
+                                        220, 180, 380, 150);
+        aStagger = AddTextBlurb(aText[0], 200, 380, aStagger + 100);
+        mResetFrame = aStagger + 100;
+        break;
+    }
+    case 1:
+    {
+        int aStagger = AddTextBlurbWrap("I see what?!?  You have lived still.  Is it possible to be the one of which the ancient "
+                                        "prophecy speaks?  It was sent in order perhaps to release me from my wicked capture person finally.  "
+                                        "But no namely this was the story of the exactly old wive.  You want to live, now retreat!",
+                                        220, 180, 380, 150);
+        aStagger = AddTextBlurb(aText[1], 200, 380, aStagger + 100);
+        mResetFrame = aStagger + 100;
+        break;
+    }
+    case 2:
+    {
+        int aStagger = AddTextBlurbWrap("As for me it is not possible to believe!  Your power namely that is large!  But there is one "
+                                        "more temple which you do not find, that the Zuma deeply buried under the land.  It was hidden, "
+                                        "it is the temple of secret!  You the final temple must fight in order to take the cover of position of my jail!!",
+                                        220, 180, 380, 150);
+        aStagger = AddTextBlurb(aText[1], 200, 380, aStagger + 100);
+        mResetFrame = aStagger + 100;
+        break;
+    }
+    case 3:
+    {
+        std::string aStr = "The final temple of Zuma was struck!  Your extreme power is not possible to be defeated!  "
+                           "As for me it can taste the taste whose almost freedom is sweet sweetly.  But God of the sun can "
+                           "be imprisoned at only that true house.";
+        int aStagger = AddTextBlurbWrap(aStr, 220, 180, 380, 150);
+        aStagger - AddTextBlurb(aText[1], 200, 380, aStagger + 100);
+
+        int aTextY = 6 * Sexy::FONT_DIALOG->GetLineSpacing() + 180;
+        aStagger - AddTextBlurbWrap("We come from the star, return to the star!  It is of you to rescue of my star.",
+                                    220, aTextY, 380, aStagger + 50);
+        mResetFrame = aStagger + 100;
+        break;
+    }
+    case 4:
+    {
+        int aStagger = AddTextBlurbWrap("Excellent work, mighty frog one!  You obtained your lawful place of the stars, at the side of the ancient "
+                                        "ruler of the Zuma.  In the future, as for me, you are known as our sibling.  I will call you brother, "
+                                        "and we control the outer space together!  It is joyous news!  Now we are to the dance!",
+                                        220, 180, 380, 150);
+        aStagger = AddTextBlurb(aText[4], 200, 380, aStagger + 100);
+        mResetFrame = aStagger + 100;
+        break;
+    }
+    default:
+        mResetFrame = 250;
+        break;
+    }
+}
 
 void TransitionMgr::DoLevelUp()
 {

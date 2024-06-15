@@ -2,18 +2,22 @@
 #define __OPTIONSDIALOG_H__
 
 #include "CircleDialog.h"
+#include <SexyAppFramework/SliderListener.h>
+#include <SexyAppFramework/CheckboxListener.h>
 
 namespace Sexy
 {
     class WidgetManager;
     class CircleButton;
     class Graphics;
+    class Slider;
+    class Checkbox;
 
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
-    class OptionsDialog : public CircleDialog
+    class OptionsDialog : public CircleDialog, SliderListener, CheckboxListener
     {
-        public:
+    public:
         OptionsDialog(bool inMainMenu);
         virtual ~OptionsDialog();
 
@@ -23,9 +27,23 @@ namespace Sexy
         virtual void AddedToManager(WidgetManager *theWidgetManager);
         virtual void RemovedFromManager(WidgetManager *theWidgetManager);
 
+        virtual void ButtonPress(int theId);
+        virtual void ButtonDepress(int theId);
+        virtual void SliderVal(int theId, double theVal);
+        virtual void CheckboxChecked(int theId, bool checked);
+
         virtual void Draw(Graphics *g);
 
-        CircleButton* button;
+        Slider *mMusicVolumeSlider;
+        Slider *mSfxVolumeSlider;
+        Checkbox *mFullScreenCheckbox;
+        Checkbox *mCustomCursorsCheckbox;
+        Checkbox *m3DAccelCheckbox;
+        CircleButton *mButtonHelp;
+        CircleButton *mButtonRegister;
+        CircleButton *mButtonUpdates;
+        CircleButton *mButtonBack;
+        bool mInMainMenu;
         int mExtraHeight;
     };
 };

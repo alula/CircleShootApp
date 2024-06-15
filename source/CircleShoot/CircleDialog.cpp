@@ -44,7 +44,7 @@ int CircleDialog::GetTop()
 
 int CircleDialog::GetWidth()
 {
-    return mWidth + mContentInsets.mLeft + mContentInsets.mRight + mBackgroundInsets.mLeft + mBackgroundInsets.mRight;
+    return mWidth - mContentInsets.mLeft - mContentInsets.mRight - mBackgroundInsets.mLeft - mBackgroundInsets.mRight;
 }
 
 void CircleDialog::Draw(Graphics *g)
