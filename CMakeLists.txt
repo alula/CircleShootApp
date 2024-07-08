@@ -30,9 +30,15 @@ if(MSVC)
     add_definitions(-D_USE_MATH_DEFINES)
 endif()
 
+option(USE_BASS2 "Use BASS 2.x instead of BASS 1.x" OFF)
+
 # Use BASS 2.0 on 64-bit platform
 if(NOT WIN32 OR BITNESS STREQUAL "64")
-    message(STATUS "Using BASS 2.x")
+    message(STATUS "64-bit platform detected, forcing BASS 2.x")
+    set(USE_BASS2 ON)
+endif()
+
+if (USE_BASS2)
     add_definitions(-DBASS2)
 endif()
 
