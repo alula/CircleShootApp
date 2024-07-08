@@ -2,7 +2,7 @@
 
 Based on reverse engineering of Mac and Windows executables distributed on PopCap.com.
 
-WORK IN PROGRESS, STILL BUGGY AND NOT FULLY PLAYABLE
+Status: Fully playable, but potential bugs and inaccuracies are expected.
 
 This is a public preview version, most development is done in a private repo with tons of mess, so any changes will be just merged as huge commits until it's finished and then development switches there.
 
