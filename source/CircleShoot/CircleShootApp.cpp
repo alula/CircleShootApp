@@ -211,7 +211,6 @@ void CircleShootApp::UpdateFrames()
 
 void CircleShootApp::ButtonDepress(int theId)
 {
-    printf("ButtonDepress:%d\n", theId);
     CheckYesNoButton(theId);
 }
 

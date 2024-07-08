@@ -526,7 +526,6 @@ void SpriteMgr::UpdateHoleBrightness(int theCurveNum, int theBrightness)
 
 void SpriteMgr::PlaceHole(int theCurveNum, int theX, int theY, float theRotation)
 {
-    printf("hole x: %d y: %d\n", theX, theY);
     int aCornerX = theX - Sexy::IMAGE_HOLE->mWidth / 2;
     int aCornerY = theY - Sexy::IMAGE_HOLE->mHeight / 2;
 
