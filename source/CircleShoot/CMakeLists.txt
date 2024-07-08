@@ -11,6 +11,7 @@ add_executable(Zuma WIN32
     CircleCommon.cpp
     CircleDialog.cpp
     CircleShootApp.cpp
+    CreateUserDialog.cpp
     CreditsScreen.cpp
     CurveData.cpp
     CurveMgr.cpp
@@ -32,6 +33,7 @@ add_executable(Zuma WIN32
     SpriteMgr.cpp
     StatsDialog.cpp
     TransitionMgr.cpp
+    UserDialog.cpp
     WayPoint.cpp
     WidgetMover.cpp
     WorkerThread.cpp

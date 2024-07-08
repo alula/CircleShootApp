@@ -642,7 +642,7 @@ int TransitionMgr::AddTextBlurbWrap(const std::string &theBlurb, int theX, int t
         if (c == ' ')
             aWordEnd = i;
 
-        aLineLength += aFont->CharWidthKern(c, aBlurb[i - 1]);
+        aLineLength += aFont->CharWidthKern(c, pc);
         if (aLineLength > theMaxWidth)
         {
             theStagger = AddTextBlurb(aBlurb.substr(0, aWordEnd), theX, theY, theStagger);

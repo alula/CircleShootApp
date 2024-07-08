@@ -147,7 +147,7 @@ void MainMenu::RemovedFromManager(WidgetManager *theWidgetManager)
 
 void MainMenu::ButtonDepress(int theId)
 {
-    CircleShootApp *app = ((CircleShootApp *)gSexyAppBase);
+    CircleShootApp *app = GetCircleShootApp();
 
     switch (theId)
     {
@@ -295,18 +295,27 @@ void MainMenu::MouseDown(int x, int y, int theClickCount)
         CalcEyePos();
         MarkDirty();
     }
+
+    if (mDoUFOEasterEgg)
+    {
+        if (x > mUFOPoint.mX - mUFOImage->mWidth / 2 && x < mUFOPoint.mX + mUFOImage->mWidth / 2 &&
+            y > mUFOPoint.mY - mUFOImage->mHeight / 2 && y < mUFOPoint.mY + mUFOImage->mHeight / 2)
+        {
+            mFlash = 1;
+        }
+    }
 }
 
 void MainMenu::SyncProfile()
 {
     mShowHat = false;
 
-    UserProfile *aProfile = ((CircleShootApp *)gSexyAppBase)->mProfile;
+    UserProfile *aProfile = GetCircleShootApp()->mProfile;
     if (!aProfile)
         return;
 
     mShowHat = true;
-    LevelParser *aLevelParser = ((CircleShootApp *)gSexyAppBase)->mLevelParser;
+    LevelParser *aLevelParser = GetCircleShootApp()->mLevelParser;
 
     int aProgressCount = aLevelParser->mBoardProgression.size() + 1;
     for (int i = 0; i < aProgressCount; i++)
@@ -468,7 +477,7 @@ void MainMenu::Update()
         mFlash++;
         if (mFlash == 25)
         {
-            ((CircleShootApp *)gSexyAppBase)->ShowCreditsScreen(false);
+            GetCircleShootApp()->ShowCreditsScreen(false);
         }
     }
 
@@ -497,7 +506,7 @@ void MainMenu::Draw(Graphics *g)
         g->DrawImage(Sexy::IMAGE_MM_HAT, 188, 247);
     }
 
-    CircleShootApp *app = ((CircleShootApp *)gSexyAppBase);
+    CircleShootApp *app = GetCircleShootApp();
 
     g->SetColorizeImages(true);
     g->SetDrawMode(Graphics::DRAWMODE_ADDITIVE);
@@ -523,8 +532,7 @@ void MainMenu::Draw(Graphics *g)
     if (app->mProfile)
     {
         welcome = "Welcome to Zuma,";
-        welcome += ' ';
-        welcome += app->mProfile->mName;
+        welcome += SexyString(" ") + app->mProfile->mName + '!';
     }
     else
     {

@@ -10,11 +10,12 @@ namespace Sexy
 {
     class CircleCheckbox;
     class CircleButton;
+    class SpriteMgr;
+    class Image;
 
     class CreditsScreen : public Widget, public ButtonListener
     {
     private:
-
     public:
         CreditsScreen(bool happyEnd);
         virtual ~CreditsScreen();
@@ -25,6 +26,21 @@ namespace Sexy
         virtual void RemovedFromManager(WidgetManager *theWidgetManager);
         virtual void ButtonDepress(int theId);
         virtual void KeyChar(char theChar);
+
+        // Unknown layout, assumed it's the same as SpriteMgr::StarInfo
+        struct StarInfo
+        {
+            float x, y;
+            float vy;
+            unsigned int mColor;
+        };
+
+        int mScroll;
+        typedef std::list<StarInfo> StarList;
+        StarList mStarInfoList; // Unused
+        SpriteMgr *mSpriteMgr;
+        CircleButton *mWhateverButton;
+        Image *mBackgroundImage;
     };
 
 };

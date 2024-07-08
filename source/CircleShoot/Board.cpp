@@ -280,7 +280,6 @@ void Board::PlayBallClick(int theSound)
 
 void Board::StartLevel()
 {
-    printf("start level\n");
     mGameState = GameState_Playing;
     mStateCount = 0;
     mSpriteMgr->ClearHoleFlashes();
@@ -294,7 +293,7 @@ void Board::StartLevel()
 
 void Board::SetLosing()
 {
-    mApp->mUnk30 = true;
+    mApp->mDoPlayCount = true;
     mSoundMgr->StopLoop(LoopType_RollIn);
 
     ResetInARowBonus();
@@ -329,7 +328,7 @@ void Board::SetLosing()
 
 void Board::DoLevelUp(bool playSounds, bool isCheat)
 {
-    mApp->mUnk30 = true;
+    mApp->mDoPlayCount = true;
     if (mPracticeBoard.empty())
     {
         if (mNextLevelDesc->mStage > mApp->mProfile->mMaxStage)
@@ -341,6 +340,7 @@ void Board::DoLevelUp(bool playSounds, bool isCheat)
     else
     {
         mApp->mProfile->UpdateMaxLevel(mOriginalPracticeBoard, mLevel + 1);
+        mApp->SaveProfile();
     }
 
     if (mIsEndless)
@@ -358,8 +358,8 @@ void Board::DoLevelUp(bool playSounds, bool isCheat)
             mCurTreasure = &*anItr;
         }
 
-        mLevelString = Sexy::StrFormat("%s %d", gSmallGauntletStages[mLevelDesc->mStage], mLevel + 1);
-        mVerboseLevelString = Sexy::StrFormat("%s %d", gGauntletStages[mLevelDesc->mStage], mLevel + 1);
+        mLevelString = Sexy::StrFormat("%s %d", gSmallGauntletStages[mLevelDesc->mStage], mLevelDesc->mLevel + 1);
+        mVerboseLevelString = Sexy::StrFormat("%s %d", gGauntletStages[mLevelDesc->mStage], mLevelDesc->mLevel + 1);
 
         int aTextWidth = Sexy::FONT_HUGE->StringWidth(mVerboseLevelString);
 
@@ -1599,6 +1599,7 @@ void Board::WaitForLoadingThread()
 void Board::Reset(bool gameOver, bool isLevelReset)
 {
     mStateCount = 0;
+    bool aSave = false;
     gBallBlink = 0;
 
     DoAccuracy(false);
@@ -1738,6 +1739,31 @@ void Board::Reset(bool gameOver, bool isLevelReset)
 
     mSpriteMgr->ClearHoleFlashes();
     mTransitionMgr->DoLevelBegin(gameOver);
+
+    if (mLevel > mApp->mProfile->mMaxLevel)
+    {
+        mApp->mProfile->mMaxLevel = mLevel;
+        aSave = true;
+    }
+
+    if (mPracticeBoard.empty())
+    {
+        if (mApp->mProfile->UpdateMaxLevel(mLevelDesc->mName, 0))
+            aSave = true;
+
+        if (mLevelDesc->mStage > mApp->mProfile->mMaxStage)
+        {
+            mApp->mProfile->mMaxStage = mLevelDesc->mStage;
+            aSave = true;
+        }
+    }
+
+    if (aSave)
+    {
+        mApp->SaveProfile();
+    }
+
+    mMaxStage = mApp->mProfile->mMaxStage;
 }
 
 void Board::Pause(bool pause, bool becauseOfDialog)
@@ -1941,11 +1967,11 @@ void Board::SaveGame(const std::string &theFilePath)
 
     aWriter.WriteLong(gSaveGameVersion);
 
-    Sexy::LevelDesc *aNextLevelDesc = mIsWinning ? mNextLevelDesc : mLevelDesc;
+    Sexy::LevelDesc *aLevelDesc = mIsWinning ? mNextLevelDesc : mLevelDesc;
 
     aWriter.WriteBool(!mPracticeBoard.empty());
     aWriter.WriteString(mVerboseLevelString);
-    aWriter.WriteString(mNextLevelDesc->mDisplayName);
+    aWriter.WriteString(aLevelDesc->mDisplayName);
     aWriter.WriteLong(mScore);
     aWriter.WriteString(mPracticeBoard);
     aWriter.WriteShort(mLevel);

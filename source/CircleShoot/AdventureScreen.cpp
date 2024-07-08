@@ -61,7 +61,7 @@ AdventureScreen::AdventureScreen()
 
 	mTemples = 0;
 	mStagger = 0;
-	mMaxStage = ((CircleShootApp *)gSexyAppBase)->mProfile->mMaxStage;
+	mMaxStage = GetCircleShootApp()->mProfile->mMaxStage;
 	if (mMaxStage < 0)
 		mMaxStage = 0;
 	if (mMaxStage > 11)
@@ -86,7 +86,7 @@ AdventureScreen::AdventureScreen()
 	mHighlightDoor = -1;
 	mStartNextTempleOnReveal = false;
 	mScoreSet = new HighScoreSet();
-	*mScoreSet = ((CircleShootApp *)gSexyAppBase)->mHighScoreMgr->GetHighScores("adventure");
+	*mScoreSet = GetCircleShootApp()->mHighScoreMgr->GetHighScores("adventure");
 }
 
 AdventureScreen::~AdventureScreen()
@@ -141,6 +141,7 @@ void AdventureScreen::Update()
 				{
 					mTempleXOffsets[i] = 0;
 				}
+				mTemples = 0;
 			}
 		}
 		else if (mStagger > 100)
@@ -151,11 +152,10 @@ void AdventureScreen::Update()
 		if (mStartNextTempleOnReveal && mTemples == 0)
 		{
 			mStartNextTempleOnReveal = false;
-			((CircleShootApp *)gSexyAppBase)->DoNextTempleDialog();
+			GetCircleShootApp()->DoNextTempleDialog();
 		}
 
 		MarkDirty();
-		return;
 	}
 
 	if (mUpdateCnt % 4 == 0)
@@ -200,11 +200,11 @@ void AdventureScreen::ButtonDepress(int theId)
 
 	if (theId == 0)
 	{
-		((CircleShootApp *)gSexyAppBase)->ShowMainMenu();
+		GetCircleShootApp()->ShowMainMenu();
 	}
 	else if (theId == 1 && mCurrentDoor >= 0)
 	{
-		((CircleShootApp *)gSexyAppBase)->StartAdventureGame(mCurrentDoor);
+		GetCircleShootApp()->StartAdventureGame(mCurrentDoor);
 	}
 }
 
@@ -420,14 +420,8 @@ void AdventureScreen::DrawTemple2(Graphics *g)
 	if (mTemples == 2)
 	{
 		int aColor = 255 * mStagger / 100;
-		if (aColor >= 0)
-		{
-			aColor = 255 - aColor;
-		}
-		else
-		{
+		if (aColor < 0)
 			aColor = 0;
-		}
 
 		g->SetColorizeImages(true);
 		g->SetColor(Color(255, 255, 255, 255 - aColor));
@@ -453,14 +447,8 @@ void AdventureScreen::DrawTemple3(Graphics *g)
 	if (mTemples == 3)
 	{
 		int aColor = 255 * mStagger / 100;
-		if (aColor >= 0)
-		{
-			aColor = 255 - aColor;
-		}
-		else
-		{
+		if (aColor < 0)
 			aColor = 0;
-		}
 
 		g->SetColorizeImages(true);
 		g->SetColor(Color(255, 255, 255, 255 - aColor));
@@ -494,6 +482,8 @@ void AdventureScreen::DrawTemple4(Graphics *g)
 			DrawDoors(g, 9, 12);
 			g->Translate(-mTempleXOffsets[3], -aY2);
 		}
+
+		g->DrawImage(Sexy::IMAGE_ADVMIDDLE, 0, 72);
 	}
 	else if (mMaxStage >= 9)
 	{

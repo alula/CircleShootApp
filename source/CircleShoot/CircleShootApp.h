@@ -48,8 +48,8 @@ namespace Sexy
         int mLastSongSwitchTime;
         int mUnk28;
         int mUnk29;
-        bool mUnk30;
-        int mUnk31;
+        bool mDoPlayCount;
+        int mPlayCount;
         int mMaxExecutions;
         int mMaxPlays;
         int mMaxTime;
@@ -66,6 +66,9 @@ namespace Sexy
 
         virtual Dialog *NewDialog(int theDialogId, bool isModal, const SexyString &theDialogHeader, const SexyString &theDialogLines, const SexyString &theDialogFooter, int theButtonMode);
         virtual bool KillDialog(int theDialogId);
+
+        virtual void GotFocus();
+        virtual void LostFocus();
 
         Board *GetBoard() { return mBoard; }
 
@@ -90,25 +93,28 @@ namespace Sexy
         void DoUserDialog();
         void DoConfirmQuitDialog();
         void DoCreateUserDialog();
+        void DoRenameUserDialog(const std::string &theName);
+        void DoConfirmDeleteUserDialog(const std::string &theName);
         void DoRegisterDialog();
         void DoNextTempleDialog();
         void DoOptionsDialog();
         void DoConfirmContinueDialog(const std::string &theVerboseLevelString, const std::string &theDisplayName, int theScore);
         void DoGetReadyDialog();
         void DoConfirmMainMenuDialog();
-        void DoStatsDialog(bool a1, bool a2);
+        void DoStatsDialog(bool slide, bool doCounter);
 
-        void FinishUpdateDialogs(int a1, bool a2);
-        void FinishUserDialog(bool a1);
-        void FinishConfirmQuitDialog(bool quit);
-        void FinishCreateUserDialog(bool a2);
-        void FinishRenameUserDialog(bool a2);
-        void FinishNeedRegisterDialog(bool a2);
-        void FinishRegisterDialog(bool a2);
+        void FinishUpdateDialogs(int theDialogId, bool confirm);
+        void FinishUserDialog(bool confirm);
+        void FinishConfirmQuitDialog(bool confirm);
+        void FinishCreateUserDialog(bool confirm);
+        void FinishRenameUserDialog(bool confirm);
+        void FinishConfirmDeleteUserDialog(bool confirm);
+        void FinishNeedRegisterDialog(bool confirm);
+        void FinishRegisterDialog(bool confirm);
         void FinishNextTempleDialog(bool save);
         void FinishConfirmContinueDialog(bool startGame);
         void FinishGetReadyDialog();
-        void FinishOptionsDialog(bool a2);
+        void FinishOptionsDialog(bool confirm);
         void FinishConfirmMainMenuDialog(bool mainMenu);
         void FinishStatsDialog(bool);
 
@@ -117,7 +123,7 @@ namespace Sexy
         void ShowMainMenu();
         void ShowAdventureScreen(bool fromMenu, bool revealTemple);
         void ShowPracticeScreen(bool fromMenu);
-        void ShowCreditsScreen(bool isEnding);
+        void ShowCreditsScreen(bool happyEnd);
         void ShowMoreGamesScreen();
 
         void EndHelpScreen();
@@ -125,5 +131,7 @@ namespace Sexy
     };
 
 };
+
+static inline Sexy::CircleShootApp *GetCircleShootApp() { return (Sexy::CircleShootApp *)Sexy::gSexyAppBase; }
 
 #endif

@@ -523,7 +523,7 @@ HelpScreen::HelpScreen() : Widget()
     mHelpBack = new HelpBack();
     mShowHelpCheckbox = Sexy::MakeCheckbox(0, this);
     mOKButton = Sexy::MakeButton(0, this, "OK", 1, 0, 3);
-    mShowHelpCheckbox->mChecked = !((CircleShootApp *)gSexyAppBase)->mProfile->mShowHelpScreen;
+    mShowHelpCheckbox->mChecked = !GetCircleShootApp()->mProfile->mShowHelpScreen;
 }
 
 HelpScreen::~HelpScreen()
@@ -583,16 +583,18 @@ void HelpScreen::RemovedFromManager(WidgetManager *theWidgetManager)
     theWidgetManager->RemoveWidget(mShowHelpCheckbox);
 
     CircleShootApp *app = (CircleShootApp *)gSexyAppBase;
-    if (mShowHelpCheckbox->mChecked != app->mProfile->mShowHelpScreen)
+
+    bool aIsShowHelpScreen = !mShowHelpCheckbox->mChecked;
+    if (aIsShowHelpScreen != app->mProfile->mShowHelpScreen)
     {
-        app->mProfile->mShowHelpScreen = mShowHelpCheckbox->mChecked;
+        app->mProfile->mShowHelpScreen = aIsShowHelpScreen;
         app->SaveProfile();
     }
 }
 
 void HelpScreen::ButtonDepress(int theId)
 {
-    ((CircleShootApp *)gSexyAppBase)->EndHelpScreen();
+    GetCircleShootApp()->EndHelpScreen();
 }
 
 void HelpScreen::CheckboxChecked(int theId, bool checked)

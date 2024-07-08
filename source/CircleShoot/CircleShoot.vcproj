@@ -150,6 +150,9 @@
 				RelativePath="CurveMgr.cpp">
 			</File>
 			<File
+				RelativePath="CreateUserDialog.cpp">
+			</File>
+			<File
 				RelativePath="CreditsScreen.cpp">
 			</File>
 			<File
@@ -207,6 +210,9 @@
 				RelativePath="TransitionMgr.cpp">
 			</File>
 			<File
+				RelativePath="UserDialog.cpp">
+			</File>
+			<File
 				RelativePath="WayPoint.cpp">
 			</File>
 			<File
@@ -248,6 +254,9 @@
 			</File>
 			<File
 				RelativePath="CircleShootApp.h">
+			</File>
+			<File
+				RelativePath="CreateUserDialog.h">
 			</File>
 			<File
 				RelativePath="CreditsScreen.h">
@@ -308,6 +317,9 @@
 			</File>
 			<File
 				RelativePath="TransitionMgr.h">
+			</File>
+			<File
+				RelativePath="UserDialog.h">
 			</File>
 			<File
 				RelativePath="WayPoint.h">

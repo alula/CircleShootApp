@@ -467,7 +467,8 @@ void Gun::DrawCachedGunImage(Graphics *g, float theZoom)
         SexyTransform2D aTrans;
         aTrans.Translate(-aCenterX, -aCenterY);
         aTrans.Scale(theZoom, theZoom);
-        aTrans.RotateRad(-mAngle);
+        // aTrans.RotateRad(mAngle);
+        aTrans.Rotate(-mAngle);
         aTrans.Translate(mCenterX + ((theZoom - 1.0f) * -50.0f),
                          mCenterY + ((theZoom - 1.0f) * 100.0f));
 
@@ -477,7 +478,8 @@ void Gun::DrawCachedGunImage(Graphics *g, float theZoom)
         aTrans.LoadIdentity();
         aTrans.Translate(-aCenterX, -aCenterY);
         aTrans.Scale(theZoom, theZoom);
-        aTrans.RotateRad(-mAngle);
+        // aTrans.RotateRad(mAngle);
+        aTrans.Rotate(-mAngle);
         aTrans.Translate(mCenterX, mCenterY);
         aD3D->BltTransformed(mCachedGunImage, &g->mClipRect, Color::White, Graphics::DRAWMODE_NORMAL, a4, aTrans, true);
     }

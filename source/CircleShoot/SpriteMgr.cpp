@@ -129,7 +129,7 @@ SpriteMgr::SpriteMgr()
     mHasBackground = false;
     mNumHoles = 0;
     mInSpace = false;
-    mSpaceScroll = false;
+    mSpaceScroll = true;
     mNebulaImage = NULL;
     mBackgroundImage = new DDImage(gSexyAppBase->mDDInterface);
     mBackgroundImage->Create(640, 480);
@@ -315,7 +315,6 @@ void SpriteMgr::DrawSpace(Graphics *g)
 {
     if (mNebulaImage)
     {
-
         int scrollY = (mUpdateCnt / 4) % mNebulaImage->mHeight;
         g->DrawImage(mNebulaImage, 0, scrollY - mNebulaImage->mHeight);
         g->DrawImage(mNebulaImage, 0, scrollY);
@@ -409,7 +408,7 @@ void SpriteMgr::AddStar(int y)
 
     StarInfo &aStar = mStarList.back();
     aStar.y = y;
-    aStar.x = rand() % 640;
+    aStar.x = rand() % CIRCLE_WINDOW_WIDTH;
 
     switch (rand() % 3)
     {
@@ -469,7 +468,39 @@ void SpriteMgr::UpdateHoles()
     }
 }
 
-void SpriteMgr::UpdateStars() {}
+void SpriteMgr::UpdateStars()
+{
+    bool aIs3DAccel = (gSexyAppBase->Is3DAccelerated());
+
+    if (mStarList.size() == 1000)
+    {
+        for (StarList::iterator anItr = mStarList.begin(); anItr != mStarList.end();)
+        {
+            anItr->y += anItr->vy;
+            if (anItr->y < CIRCLE_WINDOW_HEIGHT)
+            {
+                ++anItr;
+            }
+            else
+            {
+                anItr = mStarList.erase(anItr);
+            }
+        }
+
+        while (mStarList.size() < 1000)
+        {
+            AddStar(0);
+        }
+    }
+    else
+    {
+        mStarList.clear();
+        for (int i = 0; i < 1000; i++)
+        {
+            AddStar(rand() % CIRCLE_WINDOW_HEIGHT);
+        }
+    }
+}
 
 void SpriteMgr::InitStars() {}
 
@@ -589,13 +620,21 @@ void SpriteMgr::Update()
 
 void SpriteMgr::SetupSpace()
 {
+    mInSpace = true;
+    bool aIs3DAccelerated = gSexyAppBase->Is3DAccelerated();
+    for (int i = 0; i < 1000; i++)
+    {
+        AddStar(rand() % 480);
+    }
+
+    mNebulaImage = gSexyAppBase->GetImage("images/nebula1", false);
 }
 
 void SpriteMgr::DrawBackgroundTransition(Graphics *g)
 {
     if (mBackgroundSprites.empty())
     {
-        GenerateBackgroundTransitionSprites(((CircleShootApp *)gSexyAppBase)->mLevelParser->GetBackgroundTransition());
+        GenerateBackgroundTransitionSprites(GetCircleShootApp()->mLevelParser->GetBackgroundTransition());
     }
 
     for (SpriteList::iterator anItr = mBackgroundSprites.begin(); anItr != mBackgroundSprites.end(); anItr++)
@@ -735,14 +774,16 @@ void SpriteMgr::SyncState(DataSync &theSync)
             aWriter->WriteByte(anItr->mUpdateCount);
             aWriter->WriteByte(anItr->mCurveNum);
         }
-    } else {
+    }
+    else
+    {
         mHoleFlashList.clear();
 
         int aFlashCount = aReader->ReadByte();
         for (int i = 0; i < aFlashCount; i++)
         {
             mHoleFlashList.push_back(HoleFlash());
-            HoleFlash& aFlash = mHoleFlashList.back();
+            HoleFlash &aFlash = mHoleFlashList.back();
             aFlash.mUpdateCount = aReader->ReadByte();
             aFlash.mCurveNum = aReader->ReadByte();
         }
@@ -751,12 +792,14 @@ void SpriteMgr::SyncState(DataSync &theSync)
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-SpriteImage::~SpriteImage() {
+SpriteImage::~SpriteImage()
+{
     delete mImage;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-SpriteMgr::HoleInfo::~HoleInfo() {
+SpriteMgr::HoleInfo::~HoleInfo()
+{
     delete mImage;
 }

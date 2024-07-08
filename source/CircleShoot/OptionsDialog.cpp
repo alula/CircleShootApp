@@ -81,7 +81,7 @@ void OptionsDialog::Resize(int theX, int theY, int theWidth, int theHeight)
     int width = GetWidth();
 
     mMusicVolumeSlider->Resize(left + 130, top - 15, width - 130, 36);
-    mSfxVolumeSlider->Layout(LAY_SameLeft | LAY_Below | LAY_SameHeight | LAY_SameWidth, mMusicVolumeSlider, 0, 0, 0, 0);
+    mSfxVolumeSlider->Layout(LAY_SameLeft | LAY_Below | LAY_SameSize, mMusicVolumeSlider, 0, 0, 0, 0);
     mFullScreenCheckbox->Layout(LAY_Below | LAY_SetLeft, mSfxVolumeSlider, left, 0, 0, 0);
     mCustomCursorsCheckbox->Layout(LAY_SameTop | LAY_Right, mFullScreenCheckbox, 90, 0, 0, 0);
     m3DAccelCheckbox->Layout(LAY_SameLeft | LAY_Below, mFullScreenCheckbox, 0, 0, 0, 0);
@@ -89,7 +89,7 @@ void OptionsDialog::Resize(int theX, int theY, int theWidth, int theHeight)
     if (mButtonRegister->mVisible)
     {
         mButtonHelp->Layout(LAY_SameLeft | LAY_Below | LAY_SetWidth, m3DAccelCheckbox, 0, 0, width / 2, 0);
-        mButtonRegister->Layout(LAY_SameTop | LAY_Right | LAY_SameHeight | LAY_SameWidth, mButtonHelp, 0, 0, width, 0);
+        mButtonRegister->Layout(LAY_SameTop | LAY_Right | LAY_SameSize, mButtonHelp, 0, 0, width, 0);
     }
     else
     {
@@ -99,7 +99,7 @@ void OptionsDialog::Resize(int theX, int theY, int theWidth, int theHeight)
     if (mButtonUpdates->mVisible)
     {
         mButtonUpdates->Layout(LAY_SameLeft | LAY_Below | LAY_SetWidth, mButtonHelp, 0, 0, width, 0);
-        mButtonBack->Layout(LAY_SameLeft | LAY_Below | LAY_SameHeight | LAY_SameWidth, mButtonUpdates, 0, 0, 0, 0);
+        mButtonBack->Layout(LAY_SameLeft | LAY_Below | LAY_SameSize, mButtonUpdates, 0, 0, 0, 0);
     }
     else
     {
@@ -169,19 +169,19 @@ void OptionsDialog::ButtonDepress(int theId)
 
     if (theId == 6)
     {
-        ((CircleShootApp *)gSexyAppBase)->DoCheckForUpdatesDialog();
+        GetCircleShootApp()->DoCheckForUpdatesDialog();
     }
     else if (theId == 7)
     {
-        ((CircleShootApp *)gSexyAppBase)->DoRegisterDialog();
+        GetCircleShootApp()->DoRegisterDialog();
     }
     else if (theId == 8)
     {
-        ((CircleShootApp *)gSexyAppBase)->ReturnToMainMenu();
+        GetCircleShootApp()->ReturnToMainMenu();
     }
     else if (theId == 5)
     {
-        ((CircleShootApp *)gSexyAppBase)->ShowHelpScreen();
+        GetCircleShootApp()->ShowHelpScreen();
     }
 }
 

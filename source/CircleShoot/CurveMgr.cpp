@@ -1403,14 +1403,14 @@ void CurveMgr::AdvanceBalls()
 
     if (mFirstChainEnd >= mDangerPoint - mCurveDesc->mSlowDistance)
     {
-        if (mFirstChainEnd >= mDangerPoint)
+        if (mFirstChainEnd < mDangerPoint)
         {
-            aMaxSpeed = aMaxSpeed / mCurveDesc->mSlowFactor;
+            float aDist = (mFirstChainEnd - (mDangerPoint - mCurveDesc->mSlowDistance)) / float(mCurveDesc->mSlowDistance);
+            aMaxSpeed = (1 - aDist) * aMaxSpeed + aDist * aMaxSpeed / float(mCurveDesc->mSlowFactor);
         }
         else
         {
-            float aDist = (mFirstChainEnd - (mDangerPoint - mCurveDesc->mSlowDistance)) / mCurveDesc->mSlowDistance;
-            aMaxSpeed = (1 - aDist) * aMaxSpeed + aDist * aMaxSpeed / mCurveDesc->mSlowFactor;
+            aMaxSpeed /= mCurveDesc->mSlowFactor;
         }
     }
 

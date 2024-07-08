@@ -119,9 +119,12 @@ namespace Sexy
     CircleButton *MakeButton(int id, ButtonListener *theListener, std::string const &label, int flags, Image *image, int numCols);
     CircleCheckbox *MakeCheckbox(int id, CheckboxListener *theListener);
     void SetupDialog(Dialog *theDialog, int theMinWidth);
+    void SetupEditWidget(EditWidget *theWidget);
     MemoryImage *CutoutImageFromAlpha(MemoryImage *theBackgroundImage, MemoryImage *theAlpha, int x, int y);
     void FillCircle(Graphics *g, int x, int y, int theRadius);
     int BoardGetTickCount();
 };
+
+extern int gLastTypeFrame;
 
 #endif

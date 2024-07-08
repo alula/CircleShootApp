@@ -17,8 +17,10 @@
 #include "CircleShootApp.h"
 #include "LoadingScreen.h"
 #include "MainMenu.h"
+#include "CreateUserDialog.h"
 #include "OptionsDialog.h"
 #include "StatsDialog.h"
+#include "UserDialog.h"
 #include "AdventureScreen.h"
 #include "PracticeScreen.h"
 #include "MoreGamesScreen.h"
@@ -64,8 +66,8 @@ CircleShootApp::CircleShootApp()
     mUnk28 = 0;
     mMusicVolume = 0.6;
     mSfxVolume = 0.6;
-    mUnk30 = false;
-    mUnk31 = 0;
+    mDoPlayCount = false;
+    mPlayCount = 0;
     mUnk29 = 0;
     mMaxExecutions = 0;
     mMaxPlays = 0;
@@ -255,6 +257,22 @@ bool CircleShootApp::KillDialog(int theDialogId)
     return true;
 }
 
+void CircleShootApp::GotFocus()
+{
+    if (mBoard)
+    {
+        mBoard->Pause(false);
+    }
+}
+
+void CircleShootApp::LostFocus()
+{
+    if (mBoard)
+    {
+        mBoard->Pause(true);
+    }
+}
+
 void CircleShootApp::MakeBoard()
 {
     mDidNextTempleDialog = false;
@@ -265,7 +283,7 @@ void CircleShootApp::MakeBoard()
     mBoard->Resize(0, 0, mWidth, mHeight);
     mWidgetManager->AddWidget(mBoard);
     mWidgetManager->SetFocus(mBoard);
-    mUnk30 = false;
+    mDoPlayCount = false;
 }
 
 void CircleShootApp::CleanupWidgets()
@@ -278,10 +296,10 @@ void CircleShootApp::CleanupWidgets()
 
     if (mBoard)
     {
-        if (mUnk30)
+        if (mDoPlayCount)
         {
-            mUnk31++;
-            mUnk30 = 0;
+            mPlayCount++;
+            mDoPlayCount = false;
         }
 
         mBoard->WaitForLoadingThread();
@@ -562,7 +580,7 @@ void CircleShootApp::LoadingThreadCompleted()
     }
 }
 
-void CircleShootApp::FinishStatsDialog(bool)
+void CircleShootApp::FinishStatsDialog(bool confirm)
 {
     KillDialog(DialogType_Stats);
     if (mBoard == NULL)
@@ -590,11 +608,11 @@ void CircleShootApp::FinishStatsDialog(bool)
     }
 }
 
-void CircleShootApp::FinishConfirmQuitDialog(bool quit)
+void CircleShootApp::FinishConfirmQuitDialog(bool confirm)
 {
     KillDialog(DialogType_ConfirmQuit);
 
-    if (quit)
+    if (confirm)
     {
         Shutdown();
     }
@@ -645,10 +663,200 @@ void CircleShootApp::FinishNextTempleDialog(bool save)
 
 void CircleShootApp::DoUserDialog()
 {
+    KillDialog(DialogType_User);
+    UserDialog *aDialog = new UserDialog();
+    SetupDialog(aDialog, 400);
+    AddDialog(DialogType_User, aDialog);
 }
 
 void CircleShootApp::DoCreateUserDialog()
 {
+    KillDialog(DialogType_CreateUser);
+    CreateUserDialog *aDialog = new CreateUserDialog(false);
+    SetupDialog(aDialog, 400);
+    AddDialog(DialogType_CreateUser, aDialog);
+}
+
+void CircleShootApp::DoRenameUserDialog(const std::string &theName)
+{
+    KillDialog(DialogType_RenameUser);
+    CreateUserDialog *aDialog = new CreateUserDialog(true);
+    aDialog->SetName(theName);
+    SetupDialog(aDialog, 400);
+    AddDialog(DialogType_RenameUser, aDialog);
+}
+
+void CircleShootApp::DoConfirmDeleteUserDialog(const std::string &theName)
+{
+    KillDialog(DialogType_ConfirmDeleteUser);
+
+    std::string aText = Sexy::StrFormat("This will permanently remove '%s' from the player roster!", theName.c_str());
+    DoDialog(DialogType_ConfirmDeleteUser, true, "Are You Sure?", aText, "", Dialog::BUTTONS_YES_NO);
+}
+
+void CircleShootApp::FinishUserDialog(bool confirm)
+{
+    UserDialog *aDialog = (UserDialog *)GetDialog(DialogType_User);
+    if (!aDialog)
+        return;
+
+    if (confirm)
+    {
+        std::string aName = aDialog->GetSelName();
+        UserProfile *aProfile = mProfileMgr->GetProfile(aName);
+
+        if (aProfile)
+        {
+            mProfile = aProfile;
+            mWidgetManager->MarkAllDirty();
+            if (mMainMenu)
+            {
+                mMainMenu->SyncProfile();
+            }
+        }
+    }
+
+    KillDialog(DialogType_User);
+}
+
+void CircleShootApp::FinishCreateUserDialog(bool confirm)
+{
+    CreateUserDialog *aDialog = (CreateUserDialog *)GetDialog(DialogType_CreateUser);
+    if (!aDialog)
+        return;
+
+    std::string aName = aDialog->GetName();
+    if (confirm && aName.empty())
+    {
+        DoDialog(DialogType_NameEntry, true, "Enter Your Name",
+                 "Enter your name to create a new user profile for storing high score data and games in progress.",
+                 "OK", Dialog::BUTTONS_FOOTER);
+        return;
+    }
+
+    if (mProfile)
+    {
+        if (!confirm)
+        {
+            KillDialog(DialogType_CreateUser);
+            return;
+        }
+    }
+    else if (!confirm || aName.empty())
+    {
+        DoDialog(DialogType_NameEntry, true, "Enter Your Name",
+                 "Enter your name to create a new user profile for storing high score data and games in progress.",
+                 "OK", Dialog::BUTTONS_FOOTER);
+        return;
+    }
+
+    UserProfile *aProfile = mProfileMgr->AddProfile(aName);
+    if (aProfile)
+    {
+        mProfileMgr->Save();
+        mProfile = aProfile;
+        KillDialog(DialogType_User);
+        KillDialog(DialogType_CreateUser);
+        mWidgetManager->MarkAllDirty();
+        if (mMainMenu)
+        {
+            mMainMenu->SyncProfile();
+        }
+    }
+    else
+    {
+        // yup, it's 10 here
+        DoDialog(DialogType_NameEntry, true, "Name Conflict",
+                 "The name you entered is already being used.  Please enter a unique player name.",
+                 "OK", Dialog::BUTTONS_FOOTER);
+    }
+}
+
+void CircleShootApp::FinishRenameUserDialog(bool confirm)
+{
+    if (!confirm)
+    {
+        KillDialog(DialogType_RenameUser);
+        return;
+    }
+
+    UserDialog *aUserDialog = (UserDialog *)GetDialog(DialogType_User);
+    CreateUserDialog *aCreateDialog = (CreateUserDialog *)GetDialog(DialogType_RenameUser);
+    if (!aUserDialog || !aCreateDialog)
+        return;
+
+    std::string aSelName = aUserDialog->GetSelName();
+    std::string aNewName = aCreateDialog->GetName();
+
+    if (!aNewName.empty())
+    {
+        int cmp = stricmp(aSelName.c_str(), aNewName.c_str());
+        if (mProfileMgr->RenameProfile(aSelName, aNewName))
+        {
+            mProfileMgr->Save();
+
+            if (!cmp)
+            {
+                mProfile = mProfileMgr->GetProfile(aNewName);
+            }
+
+            aUserDialog->FinishRenameUser(aNewName);
+            mWidgetManager->MarkAllDirty();
+            KillDialog(DialogType_RenameUser);
+        }
+        else
+        {
+            DoDialog(DialogType_NameConflict, true, "Name Conflict",
+                     "The name you entered is already being used.  Please enter a unique player name.",
+                     "OK", Dialog::BUTTONS_FOOTER);
+        }
+    }
+}
+
+void CircleShootApp::FinishConfirmDeleteUserDialog(bool confirm)
+{
+    KillDialog(DialogType_ConfirmDeleteUser);
+    if (!confirm)
+        return;
+
+    UserDialog *aDialog = (UserDialog *)GetDialog(DialogType_User);
+    if (!aDialog)
+        return;
+
+    std::string aCurProfileName = mProfile ? mProfile->mName : "";
+    std::string aSelName = aDialog->GetSelName();
+
+    if (aSelName == aCurProfileName)
+    {
+        mProfile = NULL;
+    }
+
+    mProfileMgr->DeleteProfile(aSelName);
+    aDialog->FinishDeleteUser();
+
+    if (!mProfile)
+    {
+        std::string aNewName = aDialog->GetSelName();
+        mProfile = mProfileMgr->GetProfile(aNewName);
+        if (!mProfile)
+        {
+            mProfile = mProfileMgr->GetAnyProfile();
+        }
+    }
+
+    mProfileMgr->Save();
+
+    if (!mProfile)
+    {
+        DoCreateUserDialog();
+    }
+
+    mWidgetManager->MarkAllDirty();
+
+    if (mMainMenu)
+    {
+        mMainMenu->SyncProfile();
+    }
 }
 
 void CircleShootApp::DoRegisterDialog()
@@ -678,7 +886,7 @@ void CircleShootApp::DoConfirmMainMenuDialog()
     }
 }
 
-void CircleShootApp::FinishUpdateDialogs(int a1, bool a2)
+void CircleShootApp::FinishUpdateDialogs(int theDialogId, bool confirm)
 {
 }
 
@@ -843,16 +1051,16 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishUpdateDialogs(theButton - 2000, true);
             return true;
         case 2007:
-            // FinishUserDialog(true);
+            FinishUserDialog(true);
             return true;
         case 2008:
-            // FinishCreateUserDialog(true);
+            FinishCreateUserDialog(true);
             return true;
         case 2009:
-            // FinishRenameUserDialog(true);
+            FinishRenameUserDialog(true);
             return true;
         case 2012:
-            // FinishConfirmDeleteUserDialog(true);
+            FinishConfirmDeleteUserDialog(true);
             return true;
         case 2013:
             FinishConfirmContinueDialog(true);
@@ -893,16 +1101,16 @@ bool CircleShootApp::CheckYesNoButton(int theButton)
             // FinishUpdateDialogs(theButton - 3000, true);
             return true;
         case 3007:
-            // FinishUserDialog(false);
+            FinishUserDialog(false);
             return true;
         case 3008:
-            // FinishCreateUserDialog(false);
+            FinishCreateUserDialog(false);
             return true;
         case 3009:
-            // FinishRenameUserDialog(false);
+            FinishRenameUserDialog(false);
             return true;
         case 3012:
-            // FinishConfirmDeleteUserDialog(false);
+            FinishConfirmDeleteUserDialog(false);
             return true;
         case 3013:
             FinishConfirmContinueDialog(false);
@@ -964,7 +1172,9 @@ void CircleShootApp::ShowMainMenu()
     mWidgetManager->SetFocus(mMainMenu);
 
     if (!mProfile)
+    {
         DoCreateUserDialog();
+    }
 
     PlaySong(28, true, 0.01);
     ClearUpdateBacklog();
@@ -1028,8 +1238,14 @@ void CircleShootApp::ShowPracticeScreen(bool fromMenu)
     ClearUpdateBacklog();
 }
 
-void CircleShootApp::ShowCreditsScreen(bool)
+void CircleShootApp::ShowCreditsScreen(bool happyEnd)
 {
+    CleanupWidgets();
+    mCreditsScreen = new CreditsScreen(happyEnd);
+    mCreditsScreen->Resize(0, 0, mWidth, mHeight);
+    mWidgetManager->AddWidget(mCreditsScreen);
+    mWidgetManager->SetFocus(mCreditsScreen);
+    PlaySong(0, true, 0.01);
 }
 
 void CircleShootApp::ShowMoreGamesScreen()

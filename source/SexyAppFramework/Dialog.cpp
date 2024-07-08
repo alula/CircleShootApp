@@ -405,7 +405,6 @@ void Dialog::ButtonDepress(int theId)
 	// 	mResult = theId;
 	// 	mDialogListener->DialogButtonDepress(mId, theId);
 	// }
-	printf("Dialog::ButtonDepress: %d %d\n", mId, theId);
 
 	if (mId + 2000 == theId)
 	{

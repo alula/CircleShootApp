@@ -41,9 +41,9 @@ PracticeScreen::PracticeScreen()
 	mGradientImageLocked = CreateGradientImage("LoCKED", 0x85);
 	mGradientImageQuestionMark = CreateGradientImage("?", 0xFF);
 
-	mCurrentBoard = ((CircleShootApp *)gSexyAppBase)->mProfile->mLastPracticeBoard;
-	mIsEndless = ((CircleShootApp *)gSexyAppBase)->mProfile->mPracticeEndless;
-	mDifficulty = ((CircleShootApp *)gSexyAppBase)->mProfile->mPracticeDifficulty;
+	mCurrentBoard = GetCircleShootApp()->mProfile->mLastPracticeBoard;
+	mIsEndless = GetCircleShootApp()->mProfile->mPracticeEndless;
+	mDifficulty = GetCircleShootApp()->mProfile->mPracticeDifficulty;
 	mCurrentDoor = 0;
 	mHighlightDoor = -1;
 	mMaxStage = 0;
@@ -136,11 +136,11 @@ void PracticeScreen::RemovedFromManager(WidgetManager *theWidgetManager)
 	theWidgetManager->RemoveWidget(mSurvivalButton);
 	theWidgetManager->RemoveWidget(mPracticeButton);
 
-	((CircleShootApp *)gSexyAppBase)->mProfile->mLastPracticeBoard = mCurrentBoard;
-	((CircleShootApp *)gSexyAppBase)->mProfile->mPracticeEndless = mIsEndless;
-	((CircleShootApp *)gSexyAppBase)->mProfile->mPracticeDifficulty = mDifficulty;
+	GetCircleShootApp()->mProfile->mLastPracticeBoard = mCurrentBoard;
+	GetCircleShootApp()->mProfile->mPracticeEndless = mIsEndless;
+	GetCircleShootApp()->mProfile->mPracticeDifficulty = mDifficulty;
 
-	((CircleShootApp *)gSexyAppBase)->SaveProfile();
+	GetCircleShootApp()->SaveProfile();
 }
 
 void PracticeScreen::ButtonDepress(int theId)
@@ -158,14 +158,14 @@ void PracticeScreen::ButtonDepress(int theId)
 	case 2:
 		if (mCurrentDoor >= 0)
 		{
-			((CircleShootApp *)gSexyAppBase)->StartPracticeGame(mStage, 7 * mCurrentDoor, mIsEndless);
+			GetCircleShootApp()->StartPracticeGame(mStage, 7 * mCurrentDoor, mIsEndless);
 		}
 		break;
 	case 3:
-		((CircleShootApp *)gSexyAppBase)->ShowMainMenu();
+		GetCircleShootApp()->ShowMainMenu();
 		break;
 	case 4:
-		((CircleShootApp *)gSexyAppBase)->DoOptionsDialog();
+		GetCircleShootApp()->DoOptionsDialog();
 		break;
 	case 5:
 		mIsEndless = false;
@@ -491,7 +491,7 @@ void PracticeScreen::LoadBoard()
 	delete mThumbnail;
 	mThumbnail = NULL;
 
-	UserProfile *aProfile = ((CircleShootApp *)gSexyAppBase)->mProfile;
+	UserProfile *aProfile = GetCircleShootApp()->mProfile;
 	if (aProfile->mNeedGauntletBlink)
 	{
 		aProfile->mNeedGauntletBlink = false;
@@ -502,10 +502,10 @@ void PracticeScreen::LoadBoard()
 		mGauntletBlinkCount = 0;
 	}
 
-	LevelParser *aLevelParser = ((CircleShootApp *)gSexyAppBase)->mLevelParser;
+	LevelParser *aLevelParser = GetCircleShootApp()->mLevelParser;
 	int aBoards = aLevelParser->mBoardProgression.size();
 	int aMaxBoards = aBoards + 1;
-	if (((CircleShootApp *)gSexyAppBase)->mProfile->mMaxStage < 12)
+	if (GetCircleShootApp()->mProfile->mMaxStage < 12)
 	{
 		aMaxBoards = aBoards;
 	}

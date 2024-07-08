@@ -5,6 +5,7 @@
 #include <SexyAppFramework/Dialog.h>
 #include <SexyAppFramework/DialogButton.h>
 #include <SexyAppFramework/Debug.h>
+#include <SexyAppFramework/EditWidget.h>
 #include <SexyAppFramework/Font.h>
 #include <SexyAppFramework/Graphics.h>
 #include <SexyAppFramework/MemoryImage.h>
@@ -50,6 +51,10 @@ int Sexy::gSaveGameVersion = 5;
 
 int Sexy::gMainThreadId = 0;
 
+typedef std::map<std::string, int> ResourceCountMap;
+ResourceCountMap gResourceCountMap;
+int gLastTypeFrame;
+
 std::string Sexy::GetTimeString(int aTime)
 {
     if (aTime / 60 / 60 > 0)
@@ -69,7 +74,7 @@ int Sexy::AppGetTickCount()
 
 int Sexy::GetBoardStateCount()
 {
-    Board *board = ((CircleShootApp *)gSexyAppBase)->GetBoard();
+    Board *board = GetCircleShootApp()->GetBoard();
     if (board == NULL)
     {
         return 0;
@@ -103,9 +108,6 @@ int Sexy::ThreadRand()
         return gThreadRand.NextNoAssert();
     }
 }
-
-typedef std::map<std::string, int> ResourceCountMap;
-ResourceCountMap gResourceCountMap;
 
 void Sexy::LoadResourceGroup(const char *theGroup)
 {
@@ -389,6 +391,15 @@ void Sexy::SetupDialog(Dialog *theDialog, int theMinWidth)
     SetupButton(theDialog->mNoButton, 3);
 }
 
+void Sexy::SetupEditWidget(EditWidget *theWidget)
+{
+    theWidget->SetColor(0, Sexy::Color(0x294918));
+    theWidget->SetColor(1, Sexy::Color(0x000000));
+    theWidget->SetColor(2, Sexy::Color(0xCEE321));
+    theWidget->SetColor(3, Sexy::Color(0xAD28C6));
+    theWidget->SetColor(4, Sexy::Color(0xFFFFFF));
+}
+
 MemoryImage *Sexy::CutoutImageFromAlpha(MemoryImage *theBackgroundImage, MemoryImage *theAlpha, int x, int y)
 {
     Rect a1 = Rect(x, y, theAlpha->GetWidth(), theAlpha->GetHeight());
@@ -543,7 +554,7 @@ int Sexy::BoardGetTickCount()
 {
     int aTickCount;
 
-    Board *aBoard = ((CircleShootApp *)gSexyAppBase)->mBoard;
+    Board *aBoard = GetCircleShootApp()->mBoard;
     if (aBoard)
         aTickCount = 10 * aBoard->GetStateCount();
 
