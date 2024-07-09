@@ -85,7 +85,14 @@ void UserProfile::ClearDetails()
     mMaxBoardLevel["claw"] = 0;
 }
 
-void UserProfile::DeleteUserFiles() {}
+void UserProfile::DeleteUserFiles()
+{
+    // TODO: Mac version uses Application Support folder
+
+    gSexyAppBase->EraseFile(GetSaveGameName(false, mId));
+    gSexyAppBase->EraseFile(GetSaveGameName(true, mId));
+    gSexyAppBase->EraseFile(Sexy::StrFormat("userdata/user%d.dat", mId));
+}
 
 void UserProfile::LoadDetails()
 {
@@ -106,10 +113,16 @@ void UserProfile::LoadDetails()
 
 void UserProfile::SaveDetails()
 {
+    DataWriter aWriter;
+    aWriter.OpenMemory(32);
+    DataSync aSync(aWriter);
+    SyncDetails(aSync);
+
     // TODO: Mac version uses Application Support folder
     Sexy::MkDir("userdata");
 
     std::string aFileName = Sexy::StrFormat("userdata/user%d.dat", mId);
+    gSexyAppBase->WriteBytesToFile(aFileName, aWriter.mMemoryHandle, aWriter.mMemoryPosition);
 }
 
 bool UserProfile::UpdateMaxLevel(const std::string &theBoard, int theLevel)
@@ -165,6 +178,14 @@ void ProfileMgr::Load()
 
 void ProfileMgr::Save()
 {
+    DataWriter aWriter;
+    aWriter.OpenMemory(32);
+
+    DataSync aSync(aWriter);
+    SyncState(aSync);
+
+    // TODO: Mac version uses Application Support folder
+    gSexyAppBase->WriteBytesToFile("userdata/users.dat", aWriter.mMemoryHandle, aWriter.mMemoryPosition);
 }
 
 UserProfile *ProfileMgr::GetProfile(const std::string &theName)
@@ -188,8 +209,20 @@ UserProfile *ProfileMgr::GetProfile(const std::string &theName)
 
 UserProfile *ProfileMgr::AddProfile(const std::string &theName)
 {
-    // todo
-    return NULL;
+    std::pair<ProfileMap::iterator, bool> anEntry = mProfileMap.insert(std::make_pair(theName, UserProfile()));
+    if (!anEntry.second)
+    {
+        return NULL;
+    }
+
+    UserProfile *profile = &anEntry.first->second;
+    profile->mName = theName;
+    profile->mId = mNextProfileId++;
+    profile->mUseSeq = mNextProfileUseSeq++;
+
+    DeleteOldProfiles();
+
+    return profile;
 }
 
 UserProfile *ProfileMgr::GetAnyProfile()
@@ -253,8 +286,72 @@ void ProfileMgr::SyncState(DataSync &theSync)
     }
 }
 
-void ProfileMgr::DeleteOldestProfile() {}
+void ProfileMgr::DeleteOldestProfile()
+{
+    if (mProfileMap.empty())
+        return;
 
-void ProfileMgr::DeleteOldProfiles() {}
+    ProfileMap::iterator anItr = mProfileMap.begin();
+    for (ProfileMap::iterator i = mProfileMap.begin(); i != mProfileMap.end(); i++)
+    {
+        if (i->second.mUseSeq < anItr->second.mUseSeq)
+        {
+            anItr = i;
+        }
+    }
 
-void ProfileMgr::DeleteProfile(ProfileMap::iterator theItr) {}
+    anItr->second.DeleteUserFiles();
+    mProfileMap.erase(anItr);
+}
+
+void ProfileMgr::DeleteOldProfiles()
+{
+    while (mProfileMap.size() > 200)
+    {
+        DeleteOldestProfile();
+    }
+}
+
+void ProfileMgr::DeleteProfile(ProfileMap::iterator theItr)
+{
+    theItr->second.DeleteUserFiles();
+    mProfileMap.erase(theItr);
+}
+
+bool ProfileMgr::DeleteProfile(const std::string &theName)
+{
+    ProfileMap::iterator anItr = mProfileMap.find(theName);
+
+    if (anItr == mProfileMap.end())
+    {
+        return false;
+    }
+
+    DeleteProfile(anItr);
+    return true;
+}
+
+bool ProfileMgr::RenameProfile(const std::string &theOldName, const std::string &theNewName)
+{
+    ProfileMap::iterator anItr = mProfileMap.find(theOldName);
+
+    if (anItr == mProfileMap.end())
+    {
+        return false;
+    }
+
+    if (stricmp(theOldName.c_str(), theNewName.c_str()) != 0)
+    {
+        std::pair<ProfileMap::iterator, bool> anInsert = mProfileMap.insert(std::make_pair(theNewName, anItr->second));
+        if (!anInsert.second)
+        {
+            return false;
+        }
+
+        mProfileMap.erase(anItr);
+        anItr = anInsert.first;
+    }
+
+    anItr->second.mName = theNewName;
+    return true;
+}

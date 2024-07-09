@@ -3,6 +3,7 @@
 
 #include <SexyAppFramework/Widget.h>
 #include <SexyAppFramework/HyperlinkWidget.h>
+#include <SexyAppFramework/ButtonListener.h>
 
 namespace Sexy
 {

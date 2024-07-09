@@ -9,6 +9,9 @@
 #include <SexyAppFramework/WidgetManager.h>
 #include <SexyAppFramework/SexyVector.h>
 #include <SexyAppFramework/SoundManager.h>
+#include <SexyAppFramework/SoundInstance.h>
+#include <SexyAppFramework/ResourceManager.h>
+#include <SexyAppFramework/DDImage.h>
 
 #include "CircleShootApp.h"
 #include "CircleButton.h"
@@ -48,7 +51,7 @@ bool MainMenu::mMoveEyes = false;
 MainMenu::MainMenu()
 {
     mEyeCutoutPos = Point(191, 331);
-    unk78 = NULL;
+    mUFOImage = NULL;
     mFlash = 0;
     mMainMenuOverlay = new MainMenuOverlay(this);
     mArcadeButton = MakeButton(0, this, "", 3, Sexy::IMAGE_MM_ARCADE, 3);
@@ -71,33 +74,46 @@ MainMenu::MainMenu()
         30,
         aTextWidth,
         (Sexy::FONT_MAIN10->GetHeight() + 20));
-    unkC8 = 1.0f;
-    unkCC = false;
-    mUfoSound = gSexyAppBase->mSoundManager->GetSoundInstance(Sexy::SOUND_UFO);
+    mUFOScale = 1.0f;
+    mDoUFOEasterEgg = false;
+    mUFOSound = gSexyAppBase->mSoundManager->GetSoundInstance(Sexy::SOUND_UFO);
 
     SyncProfile();
 }
 
-MainMenu::~MainMenu() {}
+MainMenu::~MainMenu()
+{
+    delete mArcadeButton;
+    delete mGauntletButton;
+    delete mOptionsButton;
+    delete mMoreGamesButton;
+    delete mQuitButton;
+    delete mNotYouLink;
+    delete mEyesImage;
+    delete mUFOImage;
+    delete mMainMenuOverlay;
+    mUFOSound->Release();
+    gSexyAppBase->mResourceManager->DeleteExtraImageBuffers("MainMenu");
+}
 
 void MainMenu::KeyChar(char theChar) {}
 
 void MainMenu::DrawOverlay(Graphics *g)
 {
-    if (unkCC)
+    if (mDoUFOEasterEgg)
     {
         g->DrawImageCel(
-            unk78,
-            unkAC.mX - unk78->GetCelWidth() / 2,
-            unkAC.mY - unk78->GetCelHeight() / 2,
+            mUFOImage,
+            mUFOPoint.mX - mUFOImage->GetCelWidth() / 2,
+            mUFOPoint.mY - mUFOImage->GetCelHeight() / 2,
             (mUpdateCnt >> 1) % 5);
     }
 
     if (mFlash != 0)
     {
-        int v4 = mFlash * 255;
+        int aFlash = mFlash * 255;
         g->SetDrawMode(Graphics::DRAWMODE_ADDITIVE);
-        g->SetColor(Color(v4 / 25, v4 / 25, v4 / 25));
+        g->SetColor(Color(aFlash / 25, aFlash / 25, aFlash / 25));
         g->FillRect(0, 0, CIRCLE_WINDOW_WIDTH, CIRCLE_WINDOW_HEIGHT);
         g->SetDrawMode(Graphics::DRAWMODE_NORMAL);
     }
@@ -131,12 +147,12 @@ void MainMenu::RemovedFromManager(WidgetManager *theWidgetManager)
 
 void MainMenu::ButtonDepress(int theId)
 {
-    CircleShootApp *app = ((CircleShootApp *)gSexyAppBase);
+    CircleShootApp *app = GetCircleShootApp();
 
     switch (theId)
     {
     case 0:
-        app->StartAdventureGame(0);
+        app->ShowAdventureScreen(true, false);
         break;
     case 1:
         app->ShowPracticeScreen(true);
@@ -227,7 +243,7 @@ FPoint FindEyePos(
 
 void MainMenu::CalcEyePos()
 {
-    if (!mMoveEyes && !unkCC)
+    if (!mMoveEyes && !mDoUFOEasterEgg)
     {
         mEyeLeft = FPoint(219.0f, 368.0f);
         mEyeRight = FPoint(276.0f, 355.0f);
@@ -236,9 +252,9 @@ void MainMenu::CalcEyePos()
     {
         Point aLastMouse(mWidgetManager->mLastMouseX, mWidgetManager->mLastMouseY);
 
-        if (unkCC)
+        if (mDoUFOEasterEgg)
         {
-            aLastMouse = unkAC;
+            aLastMouse = mUFOPoint;
         }
 
         Point aPoint1(29, 25);
@@ -279,18 +295,27 @@ void MainMenu::MouseDown(int x, int y, int theClickCount)
         CalcEyePos();
         MarkDirty();
     }
+
+    if (mDoUFOEasterEgg)
+    {
+        if (x > mUFOPoint.mX - mUFOImage->mWidth / 2 && x < mUFOPoint.mX + mUFOImage->mWidth / 2 &&
+            y > mUFOPoint.mY - mUFOImage->mHeight / 2 && y < mUFOPoint.mY + mUFOImage->mHeight / 2)
+        {
+            mFlash = 1;
+        }
+    }
 }
 
 void MainMenu::SyncProfile()
 {
     mShowHat = false;
 
-    UserProfile *aProfile = ((CircleShootApp *)gSexyAppBase)->mProfile;
+    UserProfile *aProfile = GetCircleShootApp()->mProfile;
     if (!aProfile)
         return;
 
     mShowHat = true;
-    LevelParser *aLevelParser = ((CircleShootApp *)gSexyAppBase)->mLevelParser;
+    LevelParser *aLevelParser = GetCircleShootApp()->mLevelParser;
 
     int aProgressCount = aLevelParser->mBoardProgression.size() + 1;
     for (int i = 0; i < aProgressCount; i++)
@@ -308,18 +333,153 @@ void MainMenu::SyncProfile()
     }
 }
 
-void MainMenu::AddUFOMove(IntPoint const &unk1, IntPoint const &unk2, int unk3, int unk4) {}
+void MainMenu::AddUFOMove(IntPoint const &theStartPos, IntPoint const &theEndPos, int theDuration, int theStagger)
+{
+    mUFOMoveList.push_back(UFOMove());
+    UFOMove &aMove = mUFOMoveList.back();
+    aMove.mUpdateCnt = -theStagger;
+    aMove.mStartPos = theStartPos;
+    aMove.mEndPos = theEndPos;
+    aMove.mDuration = theDuration;
+}
 
-void MainMenu::DoUFO() {}
+void MainMenu::DoUFO()
+{
+    if (mDoUFOEasterEgg)
+        return;
 
-void MainMenu::UpdateUFOMove() {}
+    mFlash = 0;
+    if (mUFOImage == NULL)
+    {
+        mUFOImage = gSexyAppBase->GetImage("images/mmufo", false);
+        if (mUFOImage == NULL)
+            return;
+        mUFOImage->mNumRows = 6;
+    }
 
-void MainMenu::UpdateUFOScale() {}
+    if (mUFOSound)
+        mUFOSound->Play(true, false);
+
+    mDoUFOEasterEgg = true;
+    mUFOMoveList.clear();
+    mUFOScaleList.clear();
+    mUFOState = 0;
+
+    IntPoint aEndPoint(300, 210);
+    IntPoint aStartPoint(-50, -50);
+
+    AddUFOMove(aStartPoint, aEndPoint, 300, 0);
+}
+
+void MainMenu::UpdateUFOMove()
+{
+    if (mUFOMoveList.empty())
+    {
+        if (mDoUFOEasterEgg)
+        {
+            if (mUFOStateCount == 0)
+            {
+                mUFOPoint2.mX = mUFOPoint.mX;
+                mUFOPoint2.mY = mUFOPoint.mY + 15;
+            }
+
+            float angle = mUFOStateCount * SEXY_PI / 180.0f;
+            mUFOPoint.mX = sinf(angle) * 40.0f + mUFOPoint2.mX;
+            mUFOPoint.mY = cosf(angle) * -15.0f + mUFOPoint2.mY;
+            mUFOStateCount++;
+        }
+    }
+    else
+    {
+        UFOMove &move = mUFOMoveList.front();
+        move.mUpdateCnt++;
+        if (move.mUpdateCnt >= 0)
+        {
+            mUFOStateCount = 0;
+            float t = move.mUpdateCnt / float(move.mDuration);
+            mUFOPoint.mX = (move.mStartPos.mX * (1.0 - t)) + (move.mEndPos.mX * t);
+            mUFOPoint.mY = (move.mStartPos.mY * (1.0 - t)) + (move.mEndPos.mY * t);
+
+            CalcEyePos();
+
+            if (move.mUpdateCnt >= move.mDuration)
+            {
+                mUFOMoveList.pop_front();
+            }
+        }
+    }
+}
+
+void MainMenu::UpdateUFOScale()
+{
+    if (mUFOScaleList.empty())
+        return;
+
+    UFOScale &scale = mUFOScaleList.front();
+    scale.mUpdateCnt++;
+    if (scale.mUpdateCnt >= 0)
+    {
+        float t = scale.mUpdateCnt / scale.mDuration;
+        mUFOScale = (1.0 - t) * scale.mStartScale + t * scale.mEndScale;
+        if (scale.mUpdateCnt >= scale.mDuration)
+            mUFOScaleList.pop_front();
+    }
+}
 
 void MainMenu::Update()
 {
     Widget::Update();
     CalcEyePos();
+
+    if (gButtonSequenceCount > 2)
+    {
+        DoUFO();
+        gButtonSequenceCount = 0;
+    }
+
+    if (mDoUFOEasterEgg)
+    {
+        UpdateUFOMove();
+        UpdateUFOScale();
+
+        if (mUFOState != 0)
+        {
+            if (mUFOState == 1)
+            {
+                if (mUFOMoveList.empty())
+                {
+                    mUFOState = 2;
+                }
+            }
+            else
+            {
+                mUFOState++;
+                if (mUFOState == 100)
+                {
+                    mDoUFOEasterEgg = false;
+                    if (mUFOSound)
+                        mUFOSound->Stop();
+                }
+            }
+        }
+        else if (mUFOStateCount > 1000)
+        {
+            mUFOState = 1;
+            IntPoint a3(-200, -200);
+            AddUFOMove(mUFOPoint, a3, 50, 0);
+        }
+
+        MarkDirty();
+    }
+
+    if (mFlash > 0)
+    {
+        mFlash++;
+        if (mFlash == 25)
+        {
+            GetCircleShootApp()->ShowCreditsScreen(false);
+        }
+    }
 
     if ((mUpdateCnt & 3) == 0)
         MarkDirty();
@@ -341,7 +501,12 @@ void MainMenu::Draw(Graphics *g)
                  (mEyeRight.mX - (Sexy::IMAGE_MM_EYERIGHT->mWidth / 2)),
                  (mEyeRight.mY - (Sexy::IMAGE_MM_EYERIGHT->mHeight / 2)));
 
-    CircleShootApp *app = ((CircleShootApp *)gSexyAppBase);
+    if (mShowHat)
+    {
+        g->DrawImage(Sexy::IMAGE_MM_HAT, 188, 247);
+    }
+
+    CircleShootApp *app = GetCircleShootApp();
 
     g->SetColorizeImages(true);
     g->SetDrawMode(Graphics::DRAWMODE_ADDITIVE);
@@ -367,8 +532,7 @@ void MainMenu::Draw(Graphics *g)
     if (app->mProfile)
     {
         welcome = "Welcome to Zuma,";
-        welcome += ' ';
-        welcome += app->mProfile->mName;
+        welcome += SexyString(" ") + app->mProfile->mName + '!';
     }
     else
     {

@@ -80,6 +80,7 @@ namespace Sexy
 
         DataReader *mReader;
         DataWriter *mWriter;
+        int mVersion;
 
         explicit DataSync(DataReader &reader);
         explicit DataSync(DataWriter &writer);

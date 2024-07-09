@@ -16,6 +16,9 @@
 
 using namespace Sexy;
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 LoadingScreen::LoadingScreen()
 {
     mLoadingProgress = 0.0;
@@ -125,12 +128,11 @@ void LoadingScreen::RemovedFromManager(WidgetManager *theWidgetManager)
 
 void LoadingScreen::SyncRegistrationStuff()
 {
-    CircleShootApp *app = ((CircleShootApp *)gSexyAppBase);
     // todo: those apparently belong to SexyAppBase but idc about that atm
     unsigned int unknown1 = 0;
     unsigned int unknown2 = 0;
 
-    if (app->mMaxTime > 0)
+    if (GetCircleShootApp()->mMaxTime > 0)
     {
     }
 
@@ -150,8 +152,7 @@ void LoadingScreen::ButtonDepress(int theId)
     }
     else
     {
-        CircleShootApp *app = ((CircleShootApp *)gSexyAppBase);
-        app->ShowMainMenu();
+        GetCircleShootApp()->ShowMainMenu();
     }
 }
 

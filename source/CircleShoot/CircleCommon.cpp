@@ -5,16 +5,21 @@
 #include <SexyAppFramework/Dialog.h>
 #include <SexyAppFramework/DialogButton.h>
 #include <SexyAppFramework/Debug.h>
+#include <SexyAppFramework/EditWidget.h>
 #include <SexyAppFramework/Font.h>
 #include <SexyAppFramework/Graphics.h>
 #include <SexyAppFramework/MemoryImage.h>
 #include <SexyAppFramework/SexyAppBase.h>
+#include <SexyAppFramework/ResourceManager.h>
 
 #include "Board.h"
 #include "CircleShootApp.h"
 #include "CircleCommon.h"
 #include "CircleButton.h"
+#include "CircleCheckbox.h"
 #include "Res.h"
+
+#include <map>
 
 using namespace Sexy;
 
@@ -46,6 +51,10 @@ int Sexy::gSaveGameVersion = 5;
 
 int Sexy::gMainThreadId = 0;
 
+typedef std::map<std::string, int> ResourceCountMap;
+ResourceCountMap gResourceCountMap;
+int gLastTypeFrame;
+
 std::string Sexy::GetTimeString(int aTime)
 {
     if (aTime / 60 / 60 > 0)
@@ -65,7 +74,7 @@ int Sexy::AppGetTickCount()
 
 int Sexy::GetBoardStateCount()
 {
-    Board *board = ((CircleShootApp *)gSexyAppBase)->GetBoard();
+    Board *board = GetCircleShootApp()->GetBoard();
     if (board == NULL)
     {
         return 0;
@@ -100,18 +109,28 @@ int Sexy::ThreadRand()
     }
 }
 
-std::string Sexy::GetSaveGameName(bool isAdventure, int playerNum)
+void Sexy::LoadResourceGroup(const char *theGroup)
 {
-    std::string gameMode;
-    if (isAdventure)
+    int aRefCount = gResourceCountMap[theGroup]++;
+
+    if (aRefCount != 0)
+        return;
+
+    if (!gSexyAppBase->mResourceManager->LoadResources(theGroup) ||
+        !Sexy::ExtractResourcesByName(gSexyAppBase->mResourceManager, theGroup))
     {
-        gameMode = "adv";
+        gSexyAppBase->ShowResourceError(true);
     }
-    else
-    {
-        gameMode = "prc";
-    }
-    return Sexy::StrFormat("%s%d.sav", gameMode, playerNum);
+}
+
+void Sexy::FreeResourceGroup(const char *theGroup)
+{
+    int aRefCount = gResourceCountMap[theGroup]--;
+
+    if (aRefCount != 0)
+        return;
+
+    gSexyAppBase->mResourceManager->DeleteResources(theGroup);
 }
 
 void Sexy::MirrorPoint(float &x, float &y, MirrorType theMirror)
@@ -284,6 +303,53 @@ CircleButton *Sexy::MakeButton(int id, ButtonListener *theListener, std::string 
     return theButton;
 }
 
+CircleCheckbox *Sexy::MakeCheckbox(int id, CheckboxListener *theListener)
+{
+    CircleCheckbox *theCheckbox = new CircleCheckbox(Sexy::IMAGE_DIALOG_CHECKBOX, Sexy::IMAGE_DIALOG_CHECKBOX, id, theListener);
+    theCheckbox->mCheckedRect.mHeight = Sexy::IMAGE_DIALOG_CHECKBOX->mHeight;
+    theCheckbox->mCheckedRect.mWidth = Sexy::IMAGE_DIALOG_CHECKBOX->mWidth / 2;
+    theCheckbox->mCheckedRect.mY = 0;
+    theCheckbox->mCheckedRect.mX = 0;
+    theCheckbox->mUncheckedRect.mHeight = Sexy::IMAGE_DIALOG_CHECKBOX->mHeight;
+    theCheckbox->mUncheckedRect.mWidth = Sexy::IMAGE_DIALOG_CHECKBOX->mWidth / 2;
+    theCheckbox->mUncheckedRect.mY = 0;
+    theCheckbox->mUncheckedRect.mX = Sexy::IMAGE_DIALOG_CHECKBOX->mWidth / 2;
+
+    theCheckbox->Resize(0, 0, Sexy::IMAGE_DIALOG_CHECKBOX->mWidth / 2, Sexy::IMAGE_DIALOG_CHECKBOX->mHeight);
+
+    theCheckbox->mHasTransparencies = true;
+    theCheckbox->mHasAlpha = true;
+    theCheckbox->mClickSound = Sexy::SOUND_BUTTON2;
+
+    return theCheckbox;
+}
+
+void Sexy::DrawCheckboxText(Graphics *g, std::string const &theText, Widget *theWidget)
+{
+    int aX = theWidget->mX + theWidget->mWidth - g->mTransX;
+    int aY = theWidget->mY - g->mTransY;
+
+    int aStrWidth = g->GetFont()->StringWidth(theText);
+    g->DrawString(theText, aX, aY + 25);
+
+    Image *aImage = Sexy::IMAGE_DIALOG_CHECKBOXLINE;
+    int aStartX = aX - 5;
+    int aEndX = aStrWidth + 5;
+    int aY2 = aY + 29;
+
+    for (int i = 0; i < aEndX; i += aImage->GetWidth())
+    {
+        Rect aRect(0, 0, aEndX - i, aImage->GetHeight());
+        int aWidth = aEndX - i;
+        if (aWidth > aImage->GetWidth())
+            aWidth = aImage->GetWidth();
+        aRect.mWidth = aWidth;
+        g->DrawImage(aImage, i + aStartX, aY2, aRect);
+    }
+
+    g->DrawImage(Sexy::IMAGE_DIALOG_CHECKBOXCAP, aEndX + aStartX, aY2);
+}
+
 void Sexy::SetupDialog(Dialog *theDialog, int theMinWidth)
 {
     theDialog->SetHeaderFont(Sexy::FONT_TITLE);
@@ -323,6 +389,15 @@ void Sexy::SetupDialog(Dialog *theDialog, int theMinWidth)
 
     SetupButton(theDialog->mYesButton, 3);
     SetupButton(theDialog->mNoButton, 3);
+}
+
+void Sexy::SetupEditWidget(EditWidget *theWidget)
+{
+    theWidget->SetColor(0, Sexy::Color(0x294918));
+    theWidget->SetColor(1, Sexy::Color(0x000000));
+    theWidget->SetColor(2, Sexy::Color(0xCEE321));
+    theWidget->SetColor(3, Sexy::Color(0xAD28C6));
+    theWidget->SetColor(4, Sexy::Color(0xFFFFFF));
 }
 
 MemoryImage *Sexy::CutoutImageFromAlpha(MemoryImage *theBackgroundImage, MemoryImage *theAlpha, int x, int y)
@@ -479,9 +554,19 @@ int Sexy::BoardGetTickCount()
 {
     int aTickCount;
 
-    Board *aBoard = ((CircleShootApp *)gSexyAppBase)->mBoard;
+    Board *aBoard = GetCircleShootApp()->mBoard;
     if (aBoard)
         aTickCount = 10 * aBoard->GetStateCount();
 
     return aTickCount;
+}
+
+std::string Sexy::GetSaveGameName(bool practice, int userId)
+{
+    const char *aName = "prc";
+    if (!practice)
+    {
+        aName = "adv";
+    }
+    return Sexy::StrFormat("userdata/%s%d.sav", aName, userId);
 }

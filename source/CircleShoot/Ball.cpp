@@ -88,6 +88,25 @@ static BlendedImage *CreateBlendedPowerupLight(int thePowerType, Image *theImage
 
 void Sexy::BallDeleteGlobals()
 {
+    for (int i = 0; i < MAX_BALL_COLORS; i++)
+    {
+        delete gBlendedBalls[i];
+        gBlendedBalls[i] = NULL;
+        delete gBlendedBombLights[i];
+        gBlendedBombLights[i] = NULL;
+
+        for (int j = 0; j < 4; j++)
+        {
+            delete gBlendedPowerups[j][i];
+            gBlendedPowerups[j][i] = NULL;
+        }
+    }
+
+    for (int i = 0; i < 4; i++)
+    {
+        delete gBlendedPowerupLights[i];
+        gBlendedPowerupLights[i] = NULL;
+    }
 }
 
 Ball::Ball()

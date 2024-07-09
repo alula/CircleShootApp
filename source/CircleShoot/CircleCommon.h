@@ -9,6 +9,7 @@
 
 #define MAX_PRIORITY 5
 #define MAX_BALL_COLORS 6
+#define MAX_GAP_SIZE 300
 
 // From looking at SexyAppFramework code it seems like this specific PI constant was just copy-pasted everywhere.
 // We need this specific one instead of SEXY_PI for accurate codegen.
@@ -21,7 +22,9 @@ unsigned int ByteSwap(unsigned int theValue);
 namespace Sexy
 {
     class ButtonListener;
+    class CheckboxListener;
     class CircleButton;
+    class CircleCheckbox;
     class DialogButton;
     class Dialog;
     class EditWidget;
@@ -100,7 +103,9 @@ namespace Sexy
     int GetBoardStateCount();
     int AppRand();
     int ThreadRand();
-    std::string GetSaveGameName(bool isAdventure, int playerNum);
+    void LoadResourceGroup(const char *theGroup);
+    void FreeResourceGroup(const char *theGroup);
+    std::string GetSaveGameName(bool practice, int userId);
 
     void MirrorPoint(float &x, float &y, MirrorType theMirror);
     void MirrorPoint(int &x, int &y, MirrorType theMirror);
@@ -111,11 +116,15 @@ namespace Sexy
 
     void DrawCheckboxText(Graphics *g, std::string const &theText, Widget *theWidget);
     void SetupButton(DialogButton *theButton, int numCols);
-    CircleButton *MakeButton(int id, ButtonListener *theListener, std::string const &label, int flags, Image *image, int a6);
+    CircleButton *MakeButton(int id, ButtonListener *theListener, std::string const &label, int flags, Image *image, int numCols);
+    CircleCheckbox *MakeCheckbox(int id, CheckboxListener *theListener);
     void SetupDialog(Dialog *theDialog, int theMinWidth);
+    void SetupEditWidget(EditWidget *theWidget);
     MemoryImage *CutoutImageFromAlpha(MemoryImage *theBackgroundImage, MemoryImage *theAlpha, int x, int y);
     void FillCircle(Graphics *g, int x, int y, int theRadius);
     int BoardGetTickCount();
 };
+
+extern int gLastTypeFrame;
 
 #endif

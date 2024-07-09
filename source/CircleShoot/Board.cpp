@@ -1,6 +1,7 @@
 #include "Zuma_Prefix.pch"
 
 #include <SexyAppFramework/Common.h>
+#include <SexyAppFramework/Debug.h>
 #include <SexyAppFramework/SexyAppBase.h>
 #include <SexyAppFramework/ButtonWidget.h>
 #include <SexyAppFramework/ButtonListener.h>
@@ -179,7 +180,24 @@ Board::Board(CircleShootApp *theApp)
 
 Board::~Board()
 {
+    WaitForLoadingThread();
+    DeleteBullets();
+    for (int i = 0; i < MAX_CURVES; i++)
+    {
+        delete mCurveMgr[i];
+        delete mNextCurveMgr[i];
+    }
+    delete mSpriteMgr;
+    delete mNextSpriteMgr;
+    delete mParticleMgr;
+    delete mTransitionMgr;
+    delete mSoundMgr;
     delete mGun;
+    delete mLevelDesc;
+    delete mNextLevelDesc;
+    delete mMenuButton;
+    delete mContinueButton;
+    delete mOverlayWidget;
 }
 
 void Board::StaticLoadProc(void *theData)
@@ -225,10 +243,11 @@ void Board::LoadProc()
     }
     else if (mLoadingThreadParam == 1)
     {
-        if (mLevelDesc->mBackgroundAlpha.empty())
-            *mLevelDesc = mApp->mLevelParser->GetBackgroundTransition();
+        LevelDesc *aLevelDesc = mLevelDesc;
+        if (aLevelDesc->mBackgroundAlpha.empty())
+            aLevelDesc = &mApp->mLevelParser->GetBackgroundTransition();
 
-        mSpriteMgr->GenerateBackgroundTransitionSprites(*mLevelDesc);
+        mSpriteMgr->GenerateBackgroundTransitionSprites(*aLevelDesc);
     }
 }
 
@@ -261,7 +280,6 @@ void Board::PlayBallClick(int theSound)
 
 void Board::StartLevel()
 {
-    printf("start level\n");
     mGameState = GameState_Playing;
     mStateCount = 0;
     mSpriteMgr->ClearHoleFlashes();
@@ -275,7 +293,7 @@ void Board::StartLevel()
 
 void Board::SetLosing()
 {
-    mApp->mUnk30 = true;
+    mApp->mDoPlayCount = true;
     mSoundMgr->StopLoop(LoopType_RollIn);
 
     ResetInARowBonus();
@@ -310,8 +328,8 @@ void Board::SetLosing()
 
 void Board::DoLevelUp(bool playSounds, bool isCheat)
 {
-    mApp->mUnk30 = true;
-    if (!mPracticeBoard.empty())
+    mApp->mDoPlayCount = true;
+    if (mPracticeBoard.empty())
     {
         if (mNextLevelDesc->mStage > mApp->mProfile->mMaxStage)
         {
@@ -322,6 +340,7 @@ void Board::DoLevelUp(bool playSounds, bool isCheat)
     else
     {
         mApp->mProfile->UpdateMaxLevel(mOriginalPracticeBoard, mLevel + 1);
+        mApp->SaveProfile();
     }
 
     if (mIsEndless)
@@ -334,16 +353,13 @@ void Board::DoLevelUp(bool playSounds, bool isCheat)
         if (aTreasure >= 0)
         {
             TreasurePointList::iterator anItr = mLevelDesc->mTreasurePoints.begin();
-            for (int i = 0; i < mCurTreasureNum; i++)
-            {
-                anItr++;
-            }
+            std::advance(anItr, mCurTreasureNum);
 
             mCurTreasure = &*anItr;
         }
 
-        mLevelString = Sexy::StrFormat("%s %d", gSmallGauntletStages[mLevelDesc->mStage], mLevel + 1);
-        mVerboseLevelString = Sexy::StrFormat("%s %d", gGauntletStages[mLevelDesc->mStage], mLevel + 1);
+        mLevelString = Sexy::StrFormat("%s %d", gSmallGauntletStages[mLevelDesc->mStage], mLevelDesc->mLevel + 1);
+        mVerboseLevelString = Sexy::StrFormat("%s %d", gGauntletStages[mLevelDesc->mStage], mLevelDesc->mLevel + 1);
 
         int aTextWidth = Sexy::FONT_HUGE->StringWidth(mVerboseLevelString);
 
@@ -516,11 +532,10 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
             mTreasureZoomX = mCurTreasure->x;
             mTreasureZoomY = mCurTreasure->y;
 
-            for (int i = 0; i < 3600; i += 360)
+            for (int i = 0; i < 10; i++)
             {
-                int j = i / 10;
-                float vx = cosf(j * SEXY_PI / 180.0f);
-                float vy = sinf(j * SEXY_PI / 180.0f);
+                float vx = cosf(i * 360 / 10 * SEXY_PI / 180.0f);
+                float vy = sinf(i * 360 / 10 * SEXY_PI / 180.0f);
                 uint color = gBrightBallColors[Sexy::Rand() % 6];
 
                 mParticleMgr->AddSparkle(mCurTreasure->x + vx * 16.0f, mCurTreasure->y + vx * 16.0f, 2 * vx, 2 * vy, 5, 0, Sexy::Rand() % 5, color);
@@ -528,9 +543,8 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
 
             mCurTreasure = NULL;
 
-            // delete aBullet;
+            delete aBullet;
             theBulletItr = mBulletList.erase(theBulletItr);
-
             return;
         }
     }
@@ -541,7 +555,6 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
         {
             if (mCurveMgr[i]->CheckCollision(aBullet))
             {
-                // delete aBullet;
                 theBulletItr = mBulletList.erase(theBulletItr);
                 return;
             }
@@ -562,7 +575,6 @@ void Board::AdvanceFreeBullet(BulletList::iterator &theBulletItr)
     else
     {
         ResetInARowBonus();
-
         delete aBullet;
         theBulletItr = mBulletList.erase(theBulletItr);
     }
@@ -641,29 +653,29 @@ void Board::UpdatePlaying()
     if (aScoreDiff > 0)
     {
         int aScoreRemaining = mScoreTarget - mScore;
-        if (aScoreRemaining >= 0)
+        if (aScoreRemaining < 0)
         {
-            mTargetBarSize = 256 - (aScoreRemaining * 256 / aScoreDiff);
-        }
-        else if (mLevelEndFrame != 0)
-        {
-            if (mStateCount - 3000 == mLevelEndFrame)
+            if (mLevelEndFrame != 0)
             {
-                for (int i = 0; i < mNumCurves; i++)
+                if (mStateCount - 3000 == mLevelEndFrame)
                 {
-                    mLevelDesc->mCurveDesc[i].mPowerUpFreq[0] = 500;
-                    mLevelDesc->mCurveDesc[i].mPowerUpFreq[1] = 0;
-                    mLevelDesc->mCurveDesc[i].mPowerUpFreq[2] = 0;
-                    mLevelDesc->mCurveDesc[i].mPowerUpFreq[3] = 0;
-                    mLevelDesc->mCurveDesc[i].mAccelerationRate = 0.0003;
+                    for (int i = 0; i < mNumCurves; i++)
+                    {
+                        mLevelDesc->mCurveDesc[i].mPowerUpFreq[PowerType_Bomb] = 500;
+                        mLevelDesc->mCurveDesc[i].mPowerUpFreq[PowerType_SlowDown] = 0;
+                        mLevelDesc->mCurveDesc[i].mPowerUpFreq[PowerType_Accuracy] = 0;
+                        mLevelDesc->mCurveDesc[i].mPowerUpFreq[PowerType_MoveBackwards] = 0;
+                        mLevelDesc->mCurveDesc[i].mAccelerationRate = 0.0003;
+                    }
                 }
             }
+            else if (mBallColorMap.size() == 2)
+            {
+                mLevelEndFrame = mStateCount;
+            }
         }
-        else if (mBallColorMap.size() == 2)
-        {
-            mLevelEndFrame = mStateCount;
-            mTargetBarSize = 256 - (aScoreRemaining * 256 / aScoreDiff);
-        }
+
+        mTargetBarSize = 256 - (aScoreRemaining * 256 / aScoreDiff);
     }
 
     for (int i = 0; i < mNumCurves; ++i)
@@ -826,6 +838,11 @@ void Board::UpdateGuide()
     mGuide[3].mY = aGuide.y - dy2;
 }
 
+int GetTreasurePitch(int x)
+{
+    return 3000 * (x - 320) / 320;
+}
+
 void Board::UpdateTreasure()
 {
     if (mTreasureZoomFrame != 0)
@@ -836,6 +853,86 @@ void Board::UpdateTreasure()
             mTreasureZoomFrame = 0;
         }
     }
+
+    if (mCurTreasure != NULL && !gForceTreasure)
+    {
+        if (mStateCount > mTreasureEndFrame)
+        {
+            mApp->PlaySample(Sexy::SOUND_JEWEL_DISAPPEAR, GetTreasurePitch(mCurTreasure->x));
+            mCurTreasure = NULL;
+        }
+        return;
+    }
+
+    if (!gForceTreasure)
+    {
+        if (mScore >= mScoreTarget)
+            return;
+
+        if (mLevelDesc->mTreasurePoints.empty())
+            return;
+
+        int aRnd = Sexy::AppRand() % mLevelDesc->mTreasureFreq;
+        if (aRnd != 0 || mLevelDesc->mTreasureFreq >= mStateCount - mTreasureEndFrame)
+            return;
+    }
+
+    for (int i = 0; i < mLevelDesc->mTreasurePoints.size() * 2; i++)
+    {
+        int aTreasureNum;
+        if (gForceTreasure)
+        {
+            aTreasureNum = gForceTreasureNum - 1;
+        }
+        else
+        {
+            aTreasureNum = Sexy::AppRand();
+        }
+
+        mCurTreasureNum = aTreasureNum % mLevelDesc->mTreasurePoints.size();
+
+        TreasurePointList::iterator anItr = mLevelDesc->mTreasurePoints.begin();
+        std::advance(anItr, mCurTreasureNum);
+
+        mCurTreasure = &*anItr;
+
+        if (!gForceTreasure)
+        {
+            for (int j = 0; j < mNumCurves; j++)
+            {
+                if (mCurTreasure->mCurveDist[j] == 0)
+                    continue;
+
+                float aFarthestBallPercent = mCurveMgr[j]->GetFarthestBallPercent();
+                if (mCurTreasure->mCurveDist[j] > aFarthestBallPercent)
+                {
+                    mCurTreasure = NULL;
+                    gForceTreasure = false;
+                    return;
+                }
+            }
+        }
+
+        if (mCurTreasure != NULL)
+        {
+            mApp->PlaySample(Sexy::SOUND_JEWEL_APPEAR, GetTreasurePitch(mCurTreasure->x));
+            mTreasureEndFrame = mStateCount + 1000;
+
+            for (int j = 0; j < 360; j += 90)
+            {
+                uint aColor = gBrightBallColors[Sexy::Rand() % 6];
+                int aRand = Sexy::Rand() % 5;
+
+                float y = mCurTreasure->y + sinf(j * SEXY_PI / 180.0) * 4.0f - 15.0f;
+                float x = mCurTreasure->x + cosf(j * SEXY_PI / 180.0) * 4.0f + 10.0f;
+
+                mParticleMgr->AddSparkle(x, y, 0.0f, 0.25f, 5, 0, aRand, aColor);
+            }
+            break;
+        }
+    }
+
+    gForceTreasure = false;
 }
 
 void Board::UpdateMiscStuff()
@@ -1381,7 +1478,6 @@ void Board::KeyChar(char theChar)
 #ifndef RELEASEFINAL
     else if (c == 'P') // TODO THIS IS EXTRA DEBUG FUNCTIONALITY
     {
-        gForceStageComplete = true;
         mScore = mScoreTarget;
         mCurBarSize = mTargetBarSize;
 
@@ -1394,7 +1490,7 @@ void Board::KeyChar(char theChar)
     {
         SetLosing();
     }
-    //LHR DEBUG KEY ADDS
+	 //LHR DEBUG KEY ADDS
     else if (c == 'B') // Next bullet type, this needs work
     {
         mGun->SetNextBulletType(1);
@@ -1581,16 +1677,21 @@ void Board::ButtonDepress(int theId)
         if (aStage == 13)
         {
             mApp->DoStatsDialog(true, true);
-            // todo???
+            if (!mApp->mProfile->mHasWon)
+            {
+                mApp->mProfile->mHasWon = true;
+                mApp->SaveProfile();
+            }
         }
-        else if (aStage == 12 || 12 <= mMaxStage)
+        else if (aStage == 12 || aStage <= mMaxStage)
         {
             Reset(false, false);
         }
         else
         {
             mVerboseLevelString = Sexy::StrFormat("LeVeL %d-%d", mNextLevelDesc->mStage + 1, mNextLevelDesc->mLevel + 1);
-            // todo
+            SaveGame(GetSaveGameName(false, mApp->mProfile->mId));
+            mApp->ShowAdventureScreen(false, true);
         }
     }
 }
@@ -1637,6 +1738,7 @@ void Board::WaitForLoadingThread()
 void Board::Reset(bool gameOver, bool isLevelReset)
 {
     mStateCount = 0;
+    bool aSave = false;
     gBallBlink = 0;
 
     DoAccuracy(false);
@@ -1747,13 +1849,13 @@ void Board::Reset(bool gameOver, bool isLevelReset)
 
     if (!mPracticeBoard.empty())
     {
-        mLevelString = Sexy::StrFormat("%s %d", gSmallGauntletStages[mLevelDesc->mStage], mLevel + 1);
-        mVerboseLevelString = Sexy::StrFormat("%s %d", gGauntletStages[mLevelDesc->mStage], mLevel + 1);
+        mLevelString = Sexy::StrFormat("%s %d", gSmallGauntletStages[mLevelDesc->mStage], mLevelDesc->mLevel + 1);
+        mVerboseLevelString = Sexy::StrFormat("%s %d", gGauntletStages[mLevelDesc->mStage], mLevelDesc->mLevel + 1);
     }
     else
     {
-        mLevelString = Sexy::StrFormat("LVL %d-%d", mLevelDesc->mStage + 1, mLevel + 1);
-        mVerboseLevelString = Sexy::StrFormat("LeVeL %d-%d", mLevelDesc->mStage + 1, mLevel + 1);
+        mLevelString = Sexy::StrFormat("LVL %d-%d", mLevelDesc->mStage + 1, mLevelDesc->mLevel + 1);
+        mVerboseLevelString = Sexy::StrFormat("LeVeL %d-%d", mLevelDesc->mStage + 1, mLevelDesc->mLevel + 1);
     }
 
     mHaveReachedTarget = false;
@@ -1776,6 +1878,31 @@ void Board::Reset(bool gameOver, bool isLevelReset)
 
     mSpriteMgr->ClearHoleFlashes();
     mTransitionMgr->DoLevelBegin(gameOver);
+
+    if (mLevel > mApp->mProfile->mMaxLevel)
+    {
+        mApp->mProfile->mMaxLevel = mLevel;
+        aSave = true;
+    }
+
+    if (mPracticeBoard.empty())
+    {
+        if (mApp->mProfile->UpdateMaxLevel(mLevelDesc->mName, 0))
+            aSave = true;
+
+        if (mLevelDesc->mStage > mApp->mProfile->mMaxStage)
+        {
+            mApp->mProfile->mMaxStage = mLevelDesc->mStage;
+            aSave = true;
+        }
+    }
+
+    if (aSave)
+    {
+        mApp->SaveProfile();
+    }
+
+    mMaxStage = mApp->mProfile->mMaxStage;
 }
 
 void Board::Pause(bool pause, bool becauseOfDialog)
@@ -1832,6 +1959,7 @@ void Board::SyncState(DataSync &theSync)
 
     theSync.SyncLong(mScore);
     theSync.SyncLong(mScoreDisplay);
+    theSync.SyncLong(mStateCount);
     theSync.SyncShort(mLives);
     theSync.SyncLong(mCurBarSize);
     theSync.SyncLong(mTargetBarSize);
@@ -1917,10 +2045,7 @@ void Board::SyncState(DataSync &theSync)
         else
         {
             TreasurePointList::iterator anItr = mLevelDesc->mTreasurePoints.begin();
-            for (int i = 0; i < mCurTreasureNum; i++)
-            {
-                anItr++;
-            }
+            std::advance(anItr, mCurTreasureNum);
 
             mCurTreasure = &*anItr;
         }
@@ -1981,11 +2106,11 @@ void Board::SaveGame(const std::string &theFilePath)
 
     aWriter.WriteLong(gSaveGameVersion);
 
-    Sexy::LevelDesc *aNextLevelDesc = mIsWinning ? mNextLevelDesc : mLevelDesc;
+    Sexy::LevelDesc *aLevelDesc = mIsWinning ? mNextLevelDesc : mLevelDesc;
 
     aWriter.WriteBool(!mPracticeBoard.empty());
     aWriter.WriteString(mVerboseLevelString);
-    aWriter.WriteString(mNextLevelDesc->mDisplayName);
+    aWriter.WriteString(aLevelDesc->mDisplayName);
     aWriter.WriteLong(mScore);
     aWriter.WriteString(mPracticeBoard);
     aWriter.WriteShort(mLevel);
@@ -2007,9 +2132,12 @@ void Board::SaveGame(const std::string &theFilePath)
     aUnkState = -1;
 }
 
+// probably not original code, not present in known versions.
 void Board::LoadGame(const std::string &theFilePath)
 {
-    // Stub, code not present in executable.
+    Buffer aBuffer;
+    if (mApp->ReadBufferFromFile(theFilePath, &aBuffer))
+        LoadGame(aBuffer);
 }
 
 void Board::LoadGame(Buffer &theBuffer)
@@ -2138,7 +2266,7 @@ int Board::GetParBonus(int theLevelTime, int theParTime)
         return 0;
     }
 
-    return 100 * (((1.0f - ((float)theLevelTime / theParTime)) * 25000.0f) / 100) + 100;
+    return 100 * int(((1.0f - ((float)theLevelTime / theParTime)) * 25000.0f) / 100) + 100;
 }
 
 void Board::ResetInARowBonus()
@@ -2190,20 +2318,23 @@ void Board::SetLevelToNextLevel()
 {
     WaitForLoadingThread();
 
-    LevelDesc *anOldLevelDesc = mLevelDesc;
-    mLevelDesc = mNextLevelDesc;
-    mNextLevelDesc = anOldLevelDesc;
+    // LevelDesc *anOldLevelDesc = mLevelDesc;
+    // mLevelDesc = mNextLevelDesc;
+    // mNextLevelDesc = anOldLevelDesc;
+    std::swap(mLevelDesc, mNextLevelDesc);
 
     for (int i = 0; i < 3; i++)
     {
-        CurveMgr *aCurveMgr = mCurveMgr[i];
-        mCurveMgr[i] = mNextCurveMgr[i];
-        mNextCurveMgr[i] = aCurveMgr;
-
-        SpriteMgr *aOldSprMgr = mSpriteMgr;
-        mSpriteMgr = mNextSpriteMgr;
-        mNextSpriteMgr = aOldSprMgr;
+        // CurveMgr *aCurveMgr = mCurveMgr[i];
+        // mCurveMgr[i] = mNextCurveMgr[i];
+        // mNextCurveMgr[i] = aCurveMgr;
+        std::swap(mCurveMgr[i], mNextCurveMgr[i]);
     }
+
+    // SpriteMgr *aOldSprMgr = mSpriteMgr;
+    // mSpriteMgr = mNextSpriteMgr;
+    // mNextSpriteMgr = aOldSprMgr;
+    std::swap(mSpriteMgr, mNextSpriteMgr);
 
     mNumCurves = mLevelDesc->GetNumCurves();
 }
@@ -2212,15 +2343,7 @@ void Board::GetLevel(int theLevel, LevelDesc *theLevelDesc, const char *theLevel
 {
     int aNumColors = 0;
 
-    if (mPracticeBoard.empty())
-    {
-        *theLevelDesc = mApp->mLevelParser->GetStageLevel(theLevel);
-        aNumColors = theLevelDesc->mStage / 3 + 4;
-
-        if (aNumColors > 6)
-            aNumColors = 6;
-    }
-    else
+    if (!mPracticeBoard.empty())
     {
         int aLevel = theLevel % 7;
         int aStage = theLevel / 7;
@@ -2231,14 +2354,11 @@ void Board::GetLevel(int theLevel, LevelDesc *theLevelDesc, const char *theLevel
 
         if (theLevelName != NULL)
         {
-            printf("Level name: %s\n", theLevelName);
             *theLevelDesc = mApp->mLevelParser->GetLevelByName(theLevelName, aDifficulty);
         }
         else if (mPracticeMode == PracticeMode_Single)
         {
             *theLevelDesc = mApp->mLevelParser->GetLevelByName(mPracticeBoard, aDifficulty);
-            printf("Practice board: %s\n", mPracticeBoard.c_str());
-            printf("Level name: %s\n", theLevelDesc->mName.c_str());
         }
         else if (mPracticeMode == PracticeMode_Random)
         {
@@ -2252,8 +2372,10 @@ void Board::GetLevel(int theLevel, LevelDesc *theLevelDesc, const char *theLevel
                 aShuffleCount = 1;
             }
 
-            for (std::list<std::string>::iterator i = mOldCurveList.begin(); aShuffleCount < mOldCurveList.size(); mOldCurveList.pop_back())
-                ;
+            while ((int)mOldCurveList.size() > aShuffleCount)
+            {
+                mOldCurveList.pop_back();
+            }
 
             *theLevelDesc = mApp->mLevelParser->GetRandomBoard(aDifficulty, theLevel, mApp->mProfile, mOldCurveList);
             mOldCurveList.push_front(theLevelDesc->mName);
@@ -2279,9 +2401,16 @@ void Board::GetLevel(int theLevel, LevelDesc *theLevelDesc, const char *theLevel
         theLevelDesc->mLevel = aLevel;
         theLevelDesc->mParTime += 10 * aNumColors - 40;
     }
+    else
+    {
+        *theLevelDesc = mApp->mLevelParser->GetStageLevel(theLevel);
+        aNumColors = theLevelDesc->mStage / 3 + 4;
 
-    int aNumCurves = theLevelDesc->GetNumCurves();
-    for (int i = 0; i < aNumCurves; i++)
+        if (aNumColors > 6)
+            aNumColors = 6;
+    }
+
+    for (int i = 0; i < theLevelDesc->GetNumCurves(); i++)
     {
         theLevelDesc->mCurveDesc[i].mNumColors = aNumColors;
     }

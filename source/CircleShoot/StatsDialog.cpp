@@ -21,7 +21,7 @@ using namespace Sexy;
 
 StatsDialog::StatsDialog(Board *theBoard, bool doCounter) : CircleDialog(Sexy::IMAGE_DIALOG_BACK, Sexy::IMAGE_DIALOG_BUTTON, DialogType_Stats, true,
                                                                          "STATS", "", "OK",
-                                                                         3, true)
+                                                                         Dialog::BUTTONS_FOOTER, true)
 {
     const char *aNextStageTexts[12];
     const char *aGameOverTexts[8];
@@ -193,7 +193,7 @@ void StatsDialog::Draw(Graphics *g)
     int aCol2 = aDialogLeft + 140;
     int aCol3 = aDialogLeft + 220;
     int aCol4 = aDialogLeft + 320;
-    int v34;
+    int aLineY;
 
     int aLineOffset = 6 + Sexy::FONT_MAIN12->GetLineSpacing();
     if (!mIsGameOver)
@@ -239,14 +239,14 @@ void StatsDialog::Draw(Graphics *g)
 
         g->SetColor(Color(0xF8F792));
         g->DrawString(mBestTimeLeft, aCol3, aDialogTop + 4 * aLineOffset);
-        g->DrawString(mBestTimeLeft, aCol3, aDialogTop + 5 * aLineOffset);
+        g->DrawString(mBestTimeRight, aCol3, aDialogTop + 5 * aLineOffset);
 
-        v34 = aDialogTop + 7 * aLineOffset;
+        aLineY = aDialogTop + 7 * aLineOffset;
     }
     else
     {
-        int v33 = aDialogLeft + 350;
-        int v32 = aDialogLeft + 130;
+        int aColLeft = aDialogLeft + 130;
+        int aColRight = aDialogLeft + 350;
 
         if (mIsWinning)
         {
@@ -270,26 +270,26 @@ void StatsDialog::Draw(Graphics *g)
         g->DrawString("MAX COMBO", aCol3, aDialogTop + 2 * aLineOffset);
 
         g->SetColor(Color(0xFFA500));
-        g->DrawString(Sexy::GetTimeString(mBoard->mGameStats.mTimePlayed / 100), v32, aDialogTop);
-        g->DrawString(itoa(mBoard->mGameStats.mNumCombos, buf, 10), v32, aDialogTop + aLineOffset);
-        g->DrawString(itoa(mBoard->mGameStats.mNumGemsCleared, buf, 10), v32, aDialogTop + 2 * aLineOffset);
-        g->DrawString(itoa(mBoard->mGameStats.mNumGaps, buf, 10), v33, aDialogTop);
-        g->DrawString(itoa(mBoard->mGameStats.mMaxInARow, buf, 10), v33, aDialogTop + aLineOffset);
-        g->DrawString(itoa(mBoard->mGameStats.mMaxCombo + 1, buf, 10), v33, aDialogTop + 2 * aLineOffset);
+        g->DrawString(Sexy::GetTimeString(mBoard->mGameStats.mTimePlayed / 100), aColLeft, aDialogTop);
+        g->DrawString(itoa(mBoard->mGameStats.mNumCombos, buf, 10), aColLeft, aDialogTop + aLineOffset);
+        g->DrawString(itoa(mBoard->mGameStats.mNumGemsCleared, buf, 10), aColLeft, aDialogTop + 2 * aLineOffset);
+        g->DrawString(itoa(mBoard->mGameStats.mNumGaps, buf, 10), aColRight, aDialogTop);
+        g->DrawString(itoa(mBoard->mGameStats.mMaxInARow, buf, 10), aColRight, aDialogTop + aLineOffset);
+        g->DrawString(itoa(mBoard->mGameStats.mMaxCombo + 1, buf, 10), aColRight, aDialogTop + 2 * aLineOffset);
 
-        v34 = aDialogTop + 4 * aLineOffset;
+        aLineY = aDialogTop + 4 * aLineOffset;
     }
 
     if (!mCurrentTip.empty())
     {
         g->SetColor(Color(0xFFFF00));
-        g->DrawString("TIP", aCol1, v34 + 4);
+        g->DrawString("TIP", aCol1, aLineY + 4);
         g->SetColor(Color(0xFFFFFF));
         g->SetFont(Sexy::FONT_DIALOG);
 
         Rect aRc = Rect(
             GetLeft() - mX + 60,
-            v34 - g->GetFont()->GetAscent(),
+            aLineY - g->GetFont()->GetAscent(),
             GetWidth() - 80,
             200);
 

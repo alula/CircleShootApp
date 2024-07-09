@@ -67,7 +67,7 @@ namespace Sexy
 		int GetCurCurvePoint(int theCurveNum);
 
 		bool AddGapInfo(int theCurve, int theDist, int theBallId);
-		// int GetCurGapBall(int theCurveNum); // Defined in headers, but not present in executable.
+		int GetCurGapBall(int theCurveNum);
 		int GetMinGapDist();
 		void RemoveGapInfoForBall(int theBallId);
 		int GetNumGaps() { return (int)mGapInfo.size(); }
