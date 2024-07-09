@@ -1501,7 +1501,9 @@ void Board::KeyChar(char theChar)
     }
     else if (c == 'C') // Custom
     {
-        gForceTreasureNum = Rand(3);
+        gForceTreasureNum++; //Probably a simple variable increment as the original spawns use RNG, For RNG, set this to Rand(3);
+        if (gForceTreasure == 2)
+            gForceTreasureNum = 0;
         gForceTreasure = true;
     }
     else if (c == 'E') // Extra life, I like the SFX but if you don't comment those lines (ZD Flash)
@@ -1584,22 +1586,13 @@ void Board::KeyChar(char theChar)
     {
         IncScore(mScoreTarget - mScore);
     }
-    //Shoot is this how you do it uhhh
-    else if (c == '1') // AX explosive ball
+    else if (c >= '1' && theChar <= '9') //Ported from Flash, why are they detecting 1-9 were there more powers that got cut?
     {
-        mCurveMgr[0]->AddPowerUp(PowerType_Bomb);
-    }
-    else if (c == '2') // AX time ball
-    {
-        mCurveMgr[0]->AddPowerUp(PowerType_SlowDown);
-    }
-    else if (c == '3') // Accuracy ball
-    {
-        mCurveMgr[0]->AddPowerUp(PowerType_Accuracy);
-    }
-    else if (c == '4') // Backwards ball
-    {
-        mCurveMgr[0]->AddPowerUp(PowerType_MoveBackwards);
+        if (mGameState == GameState_Playing)
+        {
+            if (c - 49 >= 0 && c - 49 < PowerType_Max)
+                mCurveMgr[Rand(mNumCurves)]->AddPowerUp((PowerType)(c - 49));
+        }   
     }
     else if (c == 127) // Delete highlighted ball
     {
