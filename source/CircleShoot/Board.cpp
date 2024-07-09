@@ -1499,18 +1499,12 @@ void Board::KeyChar(char theChar)
     {
         mApp->DoStatsDialog(true, false);
     }
-    else if (c == 'C') // Stripped, thanks Flash ZR
+    else if (c == 'C') // Custom
     {
-        if (gForceTreasure)
-        {
-            gForceTreasure = false;
-        }
-        else
-        {
-            gForceTreasure = true;
-        }
+        gForceTreasureNum = Rand(3);
+        gForceTreasure = true;
     }
-    else if (c == 'E') // Extra life from webgames, I like the SFX but if you don't comment those lines
+    else if (c == 'E') // Extra life, I like the SFX but if you don't comment those lines (ZD Flash)
     {
         mLives += 1;
         mLivesBlinkCount = 150;
@@ -1518,31 +1512,31 @@ void Board::KeyChar(char theChar)
         mSoundMgr->AddSound(Sexy::SOUND_EXTRA_LIFE, 30);
         mSoundMgr->AddSound(Sexy::SOUND_EXTRA_LIFE, 60);
     }
-    else if (c == 'F') // Custom add force stage complete
+    else if (c == 'F') // Add force stage complete (Custom)
     {
         gForceStageComplete = true;
-        Board::DoLevelUp(true, true);
+        DoLevelUp(true, true);
     }
     else if (c == 'G') // Game over cheat why not
     {
-        mLives = 0;
-        Board::SetLosing();
+        mLives = 1; //Set this to 1 so the right sound plays
+        SetLosing();
     }
     else if (c == 'K') // Kill frog, I like K more
     {
-        Board::SetLosing();
+        SetLosing();
     }
     else if (c == 'L') // Instant win
     {
         //Board::IncScore(mScoreTarget - mScore);
-        Board::DoLevelUp(true, true);
+        DoLevelUp(true, true);
     }
     else if (c == 'M' || c == '[') // Prev level
     {
         if (mLevel > 0)
         {
             mStartLevel = mLevel - 1;
-            Board::Reset(false, true);
+            Reset(false, true);
         }
     }
     else if (c == 'N' || c == ']') // Next level
@@ -1550,12 +1544,12 @@ void Board::KeyChar(char theChar)
         Board::DoLevelUp(false, true);
         if (mGameState == GameState_LevelUp)
         {
-            Board::Reset(false, false);
+            Reset(false, false);
         }
     }
     else if (c == 'R') // Reset
     {
-        Board::Reset(false, true);
+        Reset(false, true);
     }
     else if (c == '+') // Score up 1000 from ZR Flash
     {
@@ -1568,21 +1562,14 @@ void Board::KeyChar(char theChar)
     }*/
     else if (c == '|') //Speed up
     {
-        if (gSpeedUp)
-        {
-            gSpeedUp = false;
-        }
-        else
-        {
-            gSpeedUp = true;
-        }
+        gSpeedUp ^= true;
     }
-    else if (c == 'W') // Lose life from Flash
+    else if (c == 'W') // Lose life from AX
     {
         mLives -= 1;
         mLivesBlinkCount = 150;
     }
-    else if (c == 'X') //Toggle collision detection
+    else if (c == 'X') //Toggle collision detection from AX
     {
         if (gCheckCollision)
         {
@@ -1593,9 +1580,9 @@ void Board::KeyChar(char theChar)
             gCheckCollision = true;
         }
     }
-    else if (c == 'Z') // Zuma score
+    else if (c == 'Z') // Zuma score from Flash
     {
-        Board::IncScore(mScoreTarget - mScore);
+        IncScore(mScoreTarget - mScore);
     }
     //Shoot is this how you do it uhhh
     else if (c == '1') // AX explosive ball
@@ -1618,7 +1605,7 @@ void Board::KeyChar(char theChar)
     {
         //todo
     }
-    else if (c == 'A') // Color override
+    else if (c == 'A') // Color override (Custom)
     {
         if (gColorOverride <= gNumColors)
         {
