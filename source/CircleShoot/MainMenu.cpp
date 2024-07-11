@@ -54,11 +54,11 @@ MainMenu::MainMenu()
     mUFOImage = NULL;
     mFlash = 0;
     mMainMenuOverlay = new MainMenuOverlay(this);
-    mArcadeButton = MakeButton(0, this, "", 3, Sexy::IMAGE_MM_ARCADE, 3);
-    mGauntletButton = MakeButton(1, this, "", 3, Sexy::IMAGE_MM_GAUNTLET, 3);
-    mOptionsButton = MakeButton(2, this, "", 3, Sexy::IMAGE_MM_OPTIONS, 3);
-    mMoreGamesButton = MakeButton(3, this, "", 3, Sexy::IMAGE_MM_MOREGAMES, 3);
-    mQuitButton = MakeButton(4, this, "", 3, Sexy::IMAGE_MM_QUIT, 3);
+    mArcadeButton = MakeButton(0, this, "", CircleButton::CB_ClickSound | CircleButton::CB_ChoralSound, Sexy::IMAGE_MM_ARCADE, 3);
+    mGauntletButton = MakeButton(1, this, "", CircleButton::CB_ClickSound | CircleButton::CB_ChoralSound, Sexy::IMAGE_MM_GAUNTLET, 3);
+    mOptionsButton = MakeButton(2, this, "", CircleButton::CB_ClickSound | CircleButton::CB_ChoralSound, Sexy::IMAGE_MM_OPTIONS, 3);
+    mMoreGamesButton = MakeButton(3, this, "", CircleButton::CB_ClickSound | CircleButton::CB_ChoralSound, Sexy::IMAGE_MM_MOREGAMES, 3);
+    mQuitButton = MakeButton(4, this, "", CircleButton::CB_ClickSound | CircleButton::CB_ChoralSound, Sexy::IMAGE_MM_QUIT, 3);
 
     mEyesImage = Sexy::CutoutImageFromAlpha((MemoryImage *)Sexy::IMAGE_MM_BACK, (MemoryImage *)Sexy::IMAGE_MM_EYEMASK, mEyeCutoutPos.mX, mEyeCutoutPos.mY);
     mNotYouLink = new HyperlinkWidget(5, this);

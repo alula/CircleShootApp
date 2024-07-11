@@ -28,8 +28,8 @@ using namespace Sexy;
 
 AdventureScreen::AdventureScreen()
 {
-	mMainMenuButton = MakeButton(0, this, "", 1, Sexy::IMAGE_ADVMAINMENUBUTTON, 3);
-	mPlayButton = MakeButton(1, this, "", 1, Sexy::IMAGE_ADVPLAYBUTTON, 3);
+	mMainMenuButton = MakeButton(0, this, "", CircleButton::CB_ClickSound, Sexy::IMAGE_ADVMAINMENUBUTTON, 3);
+	mPlayButton = MakeButton(1, this, "", CircleButton::CB_ClickSound, Sexy::IMAGE_ADVPLAYBUTTON, 3);
 
 	Point aDoorPoints[12] = {
 		Point(226, 300),

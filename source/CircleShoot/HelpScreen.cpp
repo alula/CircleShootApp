@@ -522,7 +522,7 @@ HelpScreen::HelpScreen() : Widget()
     mHelpWidget3 = new HelpWidget3();
     mHelpBack = new HelpBack();
     mShowHelpCheckbox = Sexy::MakeCheckbox(0, this);
-    mOKButton = Sexy::MakeButton(0, this, "OK", 1, 0, 3);
+    mOKButton = MakeButton(0, this, "OK", CircleButton::CB_ClickSound, NULL, 3);
     mShowHelpCheckbox->mChecked = !GetCircleShootApp()->mProfile->mShowHelpScreen;
 }
 

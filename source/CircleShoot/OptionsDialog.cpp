@@ -34,10 +34,10 @@ OptionsDialog::OptionsDialog(bool inMainMenu) : CircleDialog(Sexy::IMAGE_DIALOG_
     mCustomCursorsCheckbox = MakeCheckbox(3, this);
     m3DAccelCheckbox = MakeCheckbox(4, this);
 
-    mButtonHelp = MakeButton(5, this, "Help", 1, 0, 3);
-    mButtonUpdates = MakeButton(6, this, "Check For Updates", 1, 0, 3);
-    mButtonRegister = MakeButton(7, this, "Register", 1, 0, 3);
-    mButtonBack = MakeButton(8, this, "Back To Main Menu", 1, 0, 3);
+    mButtonHelp = MakeButton(5, this, "Help", CircleButton::CB_ClickSound, NULL, 3);
+    mButtonUpdates = MakeButton(6, this, "Check For Updates", CircleButton::CB_ClickSound, NULL, 3);
+    mButtonRegister = MakeButton(7, this, "Register", CircleButton::CB_ClickSound, NULL, 3);
+    mButtonBack = MakeButton(8, this, "Back To Main Menu", CircleButton::CB_ClickSound, NULL, 3);
 
     mFullScreenCheckbox->mChecked = !gSexyAppBase->mIsWindowed;
     mCustomCursorsCheckbox->mChecked = gSexyAppBase->mCustomCursorsEnabled;

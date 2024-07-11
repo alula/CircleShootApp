@@ -25,7 +25,7 @@ CreditsScreen::CreditsScreen(bool happyEnd)
 	mSpriteMgr = new SpriteMgr();
 	mSpriteMgr->SetupSpace();
 
-	mWhateverButton = Sexy::MakeButton(0, this, "Whatever", 1, 0, 3);
+	mWhateverButton = MakeButton(0, this, "Whatever", CircleButton::CB_ClickSound, NULL, 3);
 
 	if (happyEnd)
 	{

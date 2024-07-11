@@ -269,10 +269,10 @@ CircleButton *Sexy::MakeButton(int id, ButtonListener *theListener, std::string 
     CircleButton *theButton = new CircleButton(image, id, theListener);
     theButton->mLabel = label;
 
-    if ((flags & 1) != 0)
+    if ((flags & CircleButton::CB_ClickSound) != 0)
         theButton->mClickSound = Sexy::SOUND_BUTTON1;
 
-    if ((flags & 2) != 0)
+    if ((flags & CircleButton::CB_ChoralSound) != 0)
     {
         int pitchTable[5];
         pitchTable[0] = 2;

@@ -12,6 +12,12 @@ namespace Sexy
     class CircleButton : public Sexy::DialogButton
     {
     public:
+        enum
+        {
+            CB_ClickSound = 1,
+            CB_ChoralSound = 2,
+        };
+
         int mClickSound;
         int mHoverSound;
         double mPitch;

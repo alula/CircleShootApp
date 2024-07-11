@@ -25,8 +25,8 @@ UserDialog::UserDialog() : CircleDialog(Sexy::IMAGE_DIALOG_BACK, Sexy::IMAGE_DIA
 {
 	mUserList = new ListWidget(0, Sexy::FONT_DIALOG, this);
 	mScrollbar = new ScrollbarWidget(0, mUserList);
-	mRenameButton = MakeButton(0, this, "Rename", 1, 0, 3);
-	mDeleteButton = MakeButton(1, this, "Delete", 1, 0, 3);
+	mRenameButton = MakeButton(0, this, "Rename", CircleButton::CB_ClickSound, NULL, 3);
+	mDeleteButton = MakeButton(1, this, "Delete", CircleButton::CB_ClickSound, NULL, 3);
 
 	static int aUserListColors[5][3] = {
 		{41, 73, 24},
