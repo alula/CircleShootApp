@@ -1475,7 +1475,7 @@ void Board::KeyChar(char theChar)
     {
         mSpriteMgr->ToggleSpaceScroll();
     }
-#if 1
+#ifndef RELEASEFINAL
     else if (c == 'P') // TODO THIS IS EXTRA DEBUG FUNCTIONALITY
     {
         mScore = mScoreTarget;
@@ -1489,6 +1489,125 @@ void Board::KeyChar(char theChar)
     else if (c == 'O') // TODO THIS IS EXTRA DEBUG FUNCTIONALITY
     {
         SetLosing();
+    }
+	 //LHR DEBUG KEY ADDS
+    else if (c == 'B') // Next bullet type, this needs work
+    {
+        mGun->SetNextBulletType(1);
+    }
+    else if (c == 'D') // Draw stats, I like the slide compared to AX but if you don't change the first true to false, A in ZR but D is cooler
+    {
+        mApp->DoStatsDialog(true, false);
+    }
+    else if (c == 'C') // Custom
+    {
+        gForceTreasureNum++; //Probably a simple variable increment as the original spawns use RNG, For RNG, set this to Rand(3);
+        if (gForceTreasure == 2)
+            gForceTreasureNum = 0;
+        gForceTreasure = true;
+    }
+    else if (c == 'E') // Extra life, I like the SFX but if you don't comment those lines (ZD Flash)
+    {
+        mLives += 1;
+        mLivesBlinkCount = 150;
+        mApp->PlaySample(Sexy::SOUND_EXTRA_LIFE);
+        mSoundMgr->AddSound(Sexy::SOUND_EXTRA_LIFE, 30);
+        mSoundMgr->AddSound(Sexy::SOUND_EXTRA_LIFE, 60);
+    }
+    else if (c == 'F') // Add force stage complete (Custom)
+    {
+        gForceStageComplete = true;
+        DoLevelUp(true, true);
+    }
+    else if (c == 'G') // Game over cheat why not
+    {
+        mLives = 1; //Set this to 1 so the right sound plays
+        SetLosing();
+    }
+    else if (c == 'K') // Kill frog, I like K more
+    {
+        SetLosing();
+    }
+    else if (c == 'L') // Instant win
+    {
+        //Board::IncScore(mScoreTarget - mScore);
+        DoLevelUp(true, true);
+    }
+    else if (c == 'M' || c == '[') // Prev level
+    {
+        if (mLevel > 0)
+        {
+            mStartLevel = mLevel - 1;
+            Reset(false, true);
+        }
+    }
+    else if (c == 'N' || c == ']') // Next level
+    {
+        Board::DoLevelUp(false, true);
+        if (mGameState == GameState_LevelUp)
+        {
+            Reset(false, false);
+        }
+    }
+    else if (c == 'R') // Reset
+    {
+        Reset(false, true);
+    }
+    else if (c == '+') // Score up 1000 from ZR Flash
+    {
+        mScore += 1000;
+        //Board::DoLevelUp(false, true);
+    }
+    /*else if (c == 'U') //AX upsell
+    {
+
+    }*/
+    else if (c == '|') //Speed up
+    {
+        gSpeedUp ^= true;
+    }
+    else if (c == 'W') // Lose life from AX
+    {
+        mLives -= 1;
+        mLivesBlinkCount = 150;
+    }
+    else if (c == 'X') //Toggle collision detection from AX
+    {
+        if (gCheckCollision)
+        {
+            gCheckCollision = false;
+        }
+        else
+        {
+            gCheckCollision = true;
+        }
+    }
+    else if (c == 'Z') // Zuma score from Flash
+    {
+        IncScore(mScoreTarget - mScore);
+    }
+    else if (c >= '1' && theChar <= '9') //Ported from Flash, why are they detecting 1-9 were there more powers that got cut?
+    {
+        if (mGameState == GameState_Playing)
+        {
+            if (c - 49 >= 0 && c - 49 < PowerType_Max)
+                mCurveMgr[Rand(mNumCurves)]->AddPowerUp((PowerType)(c - 49));
+        }   
+    }
+    else if (c == 127) // Delete highlighted ball
+    {
+        //todo
+    }
+    else if (c == 'A') // Color override (Custom)
+    {
+        if (gColorOverride <= gNumColors)
+        {
+            gColorOverride += 1;
+        }
+        else
+        {
+            gColorOverride = 0;
+        }
     }
 #endif
 }

@@ -337,6 +337,20 @@ void PracticeScreen::Draw(Graphics *g)
 void PracticeScreen::KeyChar(char theChar)
 {
 	Widget::KeyChar(theChar);
+#ifndef RELEASEFINAL
+	char c = toupper(theChar);
+	if (c == 'U') //Recover this key
+	{
+		if (gUnlocked)
+		{
+			gUnlocked = false;
+		}
+		else
+		{
+			gUnlocked = true;
+		}
+	}
+#endif
 }
 
 void PracticeScreen::MouseLeave()

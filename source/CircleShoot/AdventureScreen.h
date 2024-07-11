@@ -53,7 +53,7 @@ namespace Sexy
         virtual void RemovedFromManager(WidgetManager *theWidgetManager);
         virtual void ButtonDepress(int theId);
         virtual void Draw(Graphics *g);
-        virtual void KeyChar(char);
+        virtual void KeyChar(char theChar);
         virtual void MouseLeave();
         virtual void MouseMove(int x, int y);
         virtual void MouseDown(int x, int y, int theButton);
